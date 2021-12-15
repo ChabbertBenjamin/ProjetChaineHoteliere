@@ -7,7 +7,8 @@ public class Room {
     private int nbBed;
     private int idHotel;
 
-    public Room(Double price, int nbBed, int idHotel) {
+    public Room(int id, Double price, int nbBed, int idHotel) {
+        this.id = id;
         this.price = price;
         this.nbBed = nbBed;
         this.idHotel = idHotel;
@@ -43,5 +44,15 @@ public class Room {
 
     public void setIdHotel(int idHotel) {
         this.idHotel = idHotel;
+    }
+
+    @Override
+    public String toString() {
+        return "Room{" +
+                "id=" + id +
+                ", price=" + price +
+                ", nbBed=" + nbBed +
+                ", idHotel=" + idHotel +
+                '}';
     }
 }

@@ -1,6 +1,8 @@
 package fr.ul.miage.agent;
 
 import fr.ul.miage.entite.Hotel;
+import fr.ul.miage.entite.Reservation;
+import fr.ul.miage.entite.Room;
 import fr.ul.miage.launch.Simu;
 import fr.ul.miage.model.ConnectBDD;
 import jade.domain.DFService;
@@ -34,9 +36,34 @@ public class AgentChaineHoteliere extends GuiAgent {
             Statement stmt = DB.getConn().createStatement();
             ResultSet res = stmt.executeQuery("SELECT * FROM hotel");
             while(res.next()){
-               // System.out.println(res.getInt(1)+"  "+res.getString(2) +"  "+res.getString(3));
+                System.out.println(res.getInt(1)+"  "+res.getString(2) +"  "+res.getString(3));
                 Hotel h = new Hotel(res.getInt(1),res.getString(2),res.getInt(3),res.getString(4),res.getString(5),res.getInt(6));
-                listHotel.add(h);            }
+
+
+                Statement stmt2 = DB.getConn().createStatement();
+                ResultSet res2 = stmt2.executeQuery("SELECT * FROM reservation WHERE idhotel="+res.getInt(1));
+                ArrayList<Reservation> listReservation = new ArrayList<>();
+                while(res2.next()) {
+                    Reservation reservation = new Reservation(res2.getInt(1),res2.getInt(2),res2.getInt(3),res2.getDate(4),res2.getDate(5),res2.getDouble(6),res2.getInt(7));
+                    listReservation.add(reservation);
+                }
+                h.setListReservation(listReservation);
+
+
+                Statement stmt3 = DB.getConn().createStatement();
+                ResultSet res3 = stmt3.executeQuery("SELECT * FROM room WHERE idhotel="+res.getInt(1));
+                ArrayList<Room> listRoom = new ArrayList<>();
+                while(res3.next()) {
+                    Room room = new Room(res3.getInt(1),res3.getDouble(2),res3.getInt(3),res3.getInt(4));
+                    listRoom.add(room);
+                }
+                h.setListRoom(listRoom);
+
+                listHotel.add(h);
+            }
+
+
+
 
         } catch (SQLException e) {
             e.printStackTrace();

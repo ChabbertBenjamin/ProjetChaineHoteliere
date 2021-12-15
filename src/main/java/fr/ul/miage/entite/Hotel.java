@@ -1,5 +1,7 @@
 package fr.ul.miage.entite;
 
+import java.util.ArrayList;
+
 public class Hotel {
 
     private int id;
@@ -9,6 +11,9 @@ public class Hotel {
     private String country;
     private int nbRoom;
 
+    private ArrayList<Reservation> listReservation;
+    private ArrayList<Room> listRoom;
+
     public Hotel(int id, String name, int standing, String city, String country, int nbRoom) {
         this.id = id;
         this.name = name;
@@ -16,6 +21,22 @@ public class Hotel {
         this.city = city;
         this.country = country;
         this.nbRoom = nbRoom;
+    }
+
+    public ArrayList<Room> getListRoom() {
+        return listRoom;
+    }
+
+    public void setListRoom(ArrayList<Room> listRoom) {
+        this.listRoom = listRoom;
+    }
+
+    public ArrayList<Reservation> getListReservation() {
+        return listReservation;
+    }
+
+    public void setListReservation(ArrayList<Reservation> listReservation) {
+        this.listReservation = listReservation;
     }
 
     public int getId() {
@@ -69,11 +90,14 @@ public class Hotel {
     @Override
     public String toString() {
         return "Hotel{" +
-                "name='" + name + '\'' +
+                "id=" + id +
+                ", name='" + name + '\'' +
                 ", standing=" + standing +
                 ", city='" + city + '\'' +
                 ", country='" + country + '\'' +
                 ", nbRoom=" + nbRoom +
+                ", listReservation=" + listReservation +
+                ", listRoom=" + listRoom +
                 '}';
     }
 }

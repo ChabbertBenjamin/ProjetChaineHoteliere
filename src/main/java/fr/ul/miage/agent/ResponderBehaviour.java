@@ -1,12 +1,12 @@
 package fr.ul.miage.agent;
 
 import fr.ul.miage.entite.Hotel;
+import fr.ul.miage.entite.Room;
+import fr.ul.miage.message.MessageRechercheHotel;
+import jade.core.AID;
 import jade.core.behaviours.Behaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import java.util.ArrayList;
@@ -25,8 +25,12 @@ public class ResponderBehaviour extends Behaviour {
             ACLMessage aclMessage = myAgent.receive(mt);
             if (aclMessage != null) {
                 try {
-                    String messageContent = aclMessage.getContent();
+                    //String messageContent = aclMessage.getContent();
+
+                    MessageRechercheHotel msg = (MessageRechercheHotel) aclMessage.getContentObject();
+
                     //extraction de la date
+                    /*
                     int posDateDebut = messageContent.indexOf("\"date_debut\"");
                     int posDestination =messageContent.indexOf(",\"destination\"");
 
@@ -42,10 +46,11 @@ public class ResponderBehaviour extends Behaviour {
 
                     messageContent = messageContent.replace(dateDebut, "\""+dateDebut+ "\"");
                     messageContent = messageContent.replace(dateFin, "\""+dateFin+ "\"");
+*/
+                    System.out.println(myAgent.getLocalName() + ": I receive \n" + aclMessage + "\nwith content\n" + msg.toString());
 
-                    System.out.println(myAgent.getLocalName() + ": I receive \n" + aclMessage + "\nwith content\n" + messageContent);
-
-                    processMessage(messageContent);
+                    String mess = processMessage(msg);
+                    sendMessage(mess, aclMessage.getSender());
 
 
                 }
@@ -64,24 +69,34 @@ public class ResponderBehaviour extends Behaviour {
         return false;
     }
 
-    public void processMessage(String message) throws ParseException {
+    public String processMessage(MessageRechercheHotel message) throws ParseException, java.text.ParseException {
+        String answer = "";
 
-
-        JSONParser parser = new JSONParser();
-        JSONObject msgJSON=(JSONObject) parser.parse(message);
+        //JSONParser parser = new JSONParser();
+        //JSONObject msgJSON=(JSONObject) parser.parse(message);
 
 
 
         //renvoyer les hotels qui correspondent au message
-        ArrayList<Hotel> listHotelToReturn = new ArrayList<>();
+       ArrayList<Hotel> listHotelFound = new ArrayList<>();
         for (Hotel h:listHotel) {
-            if(h.getCity().equals(msgJSON.get("destination"))){
-                listHotelToReturn.add(h);
+            if(h.getCity().equals(message.getDestination())){
+                listHotelFound.add(h);
             }
         }
 
-        for (Hotel h:listHotelToReturn) {
-            System.out.println(h.toString());
+
+        for (Hotel h:listHotelFound) {
+
+
+
+
+            for (Room r:h.getListRoom()) {
+
+            }
+
+
+
         }
 
 
@@ -89,5 +104,19 @@ public class ResponderBehaviour extends Behaviour {
         //renvoyer les hotels avec des chambres disponible
 
 
+        return answer;
+    }
+
+    private void sendMessage(String mess, AID id) {
+        try {
+            ACLMessage aclMessage = new ACLMessage(ACLMessage.REQUEST);
+            aclMessage.addReceiver(id);
+
+            aclMessage.setContent(mess);
+
+            myAgent.send(aclMessage);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 }
