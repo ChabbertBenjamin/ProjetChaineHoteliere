@@ -10,6 +10,7 @@ public class Hotel {
     private int nbRoom;
 
     public Hotel(int id, String name, int standing, String city, String country, int nbRoom) {
+        this.id = id;
         this.name = name;
         this.standing = standing;
         this.city = city;
@@ -63,5 +64,16 @@ public class Hotel {
 
     public void setNbRoom(int nbRoom) {
         this.nbRoom = nbRoom;
+    }
+
+    @Override
+    public String toString() {
+        return "Hotel{" +
+                "name='" + name + '\'' +
+                ", standing=" + standing +
+                ", city='" + city + '\'' +
+                ", country='" + country + '\'' +
+                ", nbRoom=" + nbRoom +
+                '}';
     }
 }

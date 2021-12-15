@@ -18,7 +18,6 @@ import java.util.logging.Level;
 
 public class AgentChaineHoteliere extends GuiAgent {
     public static final int EXIT = 0;
-    private String chaineHotel;
 
     private ArrayList<Hotel> listHotel= new ArrayList<>();
 
@@ -26,17 +25,16 @@ public class AgentChaineHoteliere extends GuiAgent {
 
     //Initialisation de l'agent
     protected void setup(){
-        Object[] args = getArguments();
-        chaineHotel = (String) args[0];
+        //Object[] args = getArguments();
+        //chaineHotel = (String) args[0];
         //String test = (String) args[1];
 
         try {
             ConnectBDD DB = new ConnectBDD();
             Statement stmt = DB.getConn().createStatement();
-            ResultSet res = stmt.executeQuery("SELECT * FROM hotel WHERE namechaine='"+ chaineHotel +"'");
+            ResultSet res = stmt.executeQuery("SELECT * FROM hotel");
             while(res.next()){
                // System.out.println(res.getInt(1)+"  "+res.getString(2) +"  "+res.getString(3));
-
                 Hotel h = new Hotel(res.getInt(1),res.getString(2),res.getInt(3),res.getString(4),res.getString(5),res.getInt(6));
                 listHotel.add(h);            }
 
@@ -45,10 +43,11 @@ public class AgentChaineHoteliere extends GuiAgent {
         }
 
         System.out.println("Salut je suis "+getLocalName()+" et je gères "+listHotel.size()+" hotel(s).");
-        //System.out.println("hello2"+test);
         this.registerService();
-        ResponderBehaviour RB = new ResponderBehaviour(this);
-        super.addBehaviour(RB);
+        ResponderBehaviour RB = new ResponderBehaviour(this, listHotel);
+        this.addBehaviour(RB);
+
+
 
 
 
@@ -60,8 +59,8 @@ public class AgentChaineHoteliere extends GuiAgent {
         dfd.setName(super.getAID());
 
         ServiceDescription sd = new ServiceDescription();
-        sd.setType(chaineHotel);
-        sd.setName(chaineHotel);
+        sd.setType(getLocalName());
+        sd.setName(getLocalName());
 
         dfd.addServices(sd);
         try{
@@ -89,5 +88,13 @@ public class AgentChaineHoteliere extends GuiAgent {
         if (guiEvent.getType() == AgentChaineHoteliere.EXIT) {
             doDelete();
         }
+    }
+
+    public ArrayList<Hotel> getListHotel() {
+        return listHotel;
+    }
+
+    public void setListHotel(ArrayList<Hotel> listHotel) {
+        this.listHotel = listHotel;
     }
 }

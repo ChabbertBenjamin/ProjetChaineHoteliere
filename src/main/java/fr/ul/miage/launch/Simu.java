@@ -43,8 +43,8 @@ public class Simu {
         pp.setProperty(Profile.SERVICES, "jade.core.messaging.TopicManagementService;jade.core.event.NotificationService");
 
         var lesAgents = new StringBuilder();
-        lesAgents.append("Alex:fr.ul.miage.agent.AgentChaineHoteliere(Ibis);");
-        lesAgents.append("Steph:fr.ul.miage.agent.AgentChaineHoteliere(F1)");
+        lesAgents.append("Ibis:fr.ul.miage.agent.AgentChaineHoteliere;");
+        //lesAgents.append("Steph:fr.ul.miage.agent.AgentChaineHoteliere(F1)");
        /* lesAgents.append("client1:agencesVoyages.agents.TravellerAgent;");
         lesAgents.append("agentCar:agencesVoyages.agents.AgenceAgent(agentsVoyage/car.csv);");
         lesAgents.append("agentBus:agencesVoyages.agents.AgenceAgent(agentsVoyage/bus.csv);");
