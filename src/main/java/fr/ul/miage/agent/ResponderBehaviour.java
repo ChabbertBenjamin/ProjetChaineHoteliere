@@ -1,6 +1,7 @@
 package fr.ul.miage.agent;
 
 import fr.ul.miage.entite.Hotel;
+import fr.ul.miage.entite.Reservation;
 import fr.ul.miage.entite.Room;
 import fr.ul.miage.message.MessageRechercheHotel;
 import jade.core.AID;
@@ -10,10 +11,11 @@ import jade.lang.acl.MessageTemplate;
 import org.json.simple.parser.ParseException;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 public class ResponderBehaviour extends Behaviour {
     private final static MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
-    private ArrayList<Hotel> listHotel;
+    private final ArrayList<Hotel> listHotel;
     public ResponderBehaviour(AgentChaineHoteliere agentChaineHoteliere, ArrayList<Hotel> listHotel) {
         super(agentChaineHoteliere);
         this.listHotel = listHotel;
@@ -76,8 +78,7 @@ public class ResponderBehaviour extends Behaviour {
         //JSONObject msgJSON=(JSONObject) parser.parse(message);
 
 
-
-        //renvoyer les hotels qui correspondent au message
+        //trouver les hotels qui correspondent au message
        ArrayList<Hotel> listHotelFound = new ArrayList<>();
         for (Hotel h:listHotel) {
             if(h.getCity().equals(message.getDestination())){
@@ -85,18 +86,39 @@ public class ResponderBehaviour extends Behaviour {
             }
         }
 
+        Date dateDebut = message.getDateDebut();
+        Date dateFin = message.getDateFin();
 
+
+
+
+        /*
+        Savoir si une chambre est libre lorsqu'on trouve une reservation déjà présente on check :
+            - SI dateDebut de la reservation est entre dateDebutDemande et dateFinDemande
+        ET  - SI dateFin de la reservation est entre dateDebutDemande et dateFinDemande
+        ET  - SI dateDebut de la demande est entre dateDebut de la reservation et dateFin de la reservation
+        ET  - SI dateFin de la demande est entre dateDebut de la reservation et dateFin de la reservation
+
+        SI VRAI = CHAMBRE DISPONIBLE
+        SINON = CHAMBRE INDISPONIBLE
+         */
         for (Hotel h:listHotelFound) {
-
-
-
-
             for (Room r:h.getListRoom()) {
+                Date dateDebutDemande = message.getDateDebut();
+                Date dateFinDemande = message.getDateFin();
+
+                ArrayList<Reservation> listReservation = Hotel.getReservationfromRoom(h.getListReservation(),r.getId());
+                for (Reservation reservation:listReservation) {
+                    Date dateDebutReservationTrouve = reservation.getDateStart();
+                    Date dateFinReservationTrouve = reservation.getDateEnd();
+
+                    // CONDITION
+                    System.out.println(dateDebutReservationTrouve.toString());
+                }
+
+
 
             }
-
-
-
         }
 
 

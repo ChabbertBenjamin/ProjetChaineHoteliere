@@ -100,4 +100,16 @@ public class Hotel {
                 ", listRoom=" + listRoom +
                 '}';
     }
+
+    public static ArrayList<Reservation> getReservationfromRoom(ArrayList<Reservation> listReservation, int idRoom){
+        ArrayList<Reservation> listReservationConcernRoom = new ArrayList<>();
+
+        for (Reservation r: listReservation) {
+            if(r.getIdRoom() == idRoom){
+                listReservationConcernRoom.add(r);
+            }
+        }
+
+        return  listReservationConcernRoom;
+    }
 }
