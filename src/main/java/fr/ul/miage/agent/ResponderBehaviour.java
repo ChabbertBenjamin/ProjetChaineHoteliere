@@ -3,11 +3,11 @@ package fr.ul.miage.agent;
 import fr.ul.miage.entite.Hotel;
 import fr.ul.miage.entite.Reservation;
 import fr.ul.miage.entite.Room;
-import fr.ul.miage.message.MessageRechercheHotel;
 import jade.core.AID;
 import jade.core.behaviours.Behaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
 import java.util.ArrayList;
@@ -29,7 +29,7 @@ public class ResponderBehaviour extends Behaviour {
                 try {
                     //String messageContent = aclMessage.getContent();
 
-                    MessageRechercheHotel msg = (MessageRechercheHotel) aclMessage.getContentObject();
+                    JSONObject msg = (JSONObject) aclMessage.getContentObject();
 
                     //extraction de la date
                     /*
@@ -51,7 +51,7 @@ public class ResponderBehaviour extends Behaviour {
 */
                     System.out.println(myAgent.getLocalName() + ": I receive \n" + aclMessage + "\nwith content\n" + msg.toString());
 
-                    String mess = processMessage(msg);
+                    JSONObject mess = processMessage(msg);
                     sendMessage(mess, aclMessage.getSender());
 
 
@@ -71,8 +71,8 @@ public class ResponderBehaviour extends Behaviour {
         return false;
     }
 
-    public String processMessage(MessageRechercheHotel message) throws ParseException, java.text.ParseException {
-        String answer = "";
+    public JSONObject processMessage(JSONObject message) throws ParseException, java.text.ParseException {
+        JSONObject answer = new JSONObject();
 
         //JSONParser parser = new JSONParser();
         //JSONObject msgJSON=(JSONObject) parser.parse(message);
@@ -81,60 +81,80 @@ public class ResponderBehaviour extends Behaviour {
         //trouver les hotels qui correspondent au message
        ArrayList<Hotel> listHotelFound = new ArrayList<>();
         for (Hotel h:listHotel) {
-            if(h.getCity().equals(message.getDestination())){
+            if(h.getCity().equals(message.get("destination"))){
                 listHotelFound.add(h);
             }
         }
 
-        Date dateDebut = message.getDateDebut();
-        Date dateFin = message.getDateFin();
 
 
 
+        Date dateDebutDemande = (Date) message.get("dateDebut");
+        Date dateFinDemande = (Date) message.get("dateFin");
 
-        /*
-        Savoir si une chambre est libre lorsqu'on trouve une reservation déjà présente on check :
-            - SI dateDebut de la reservation est entre dateDebutDemande et dateFinDemande
-        ET  - SI dateFin de la reservation est entre dateDebutDemande et dateFinDemande
-        ET  - SI dateDebut de la demande est entre dateDebut de la reservation et dateFin de la reservation
-        ET  - SI dateFin de la demande est entre dateDebut de la reservation et dateFin de la reservation
-
-        SI VRAI = CHAMBRE DISPONIBLE
-        SINON = CHAMBRE INDISPONIBLE
-         */
+        int counter = 0;
         for (Hotel h:listHotelFound) {
+           ArrayList<Room> listRoom = new ArrayList<>();
             for (Room r:h.getListRoom()) {
-                Date dateDebutDemande = message.getDateDebut();
-                Date dateFinDemande = message.getDateFin();
 
+                boolean chambreDisponible = true;
                 ArrayList<Reservation> listReservation = Hotel.getReservationfromRoom(h.getListReservation(),r.getId());
                 for (Reservation reservation:listReservation) {
                     Date dateDebutReservationTrouve = reservation.getDateStart();
                     Date dateFinReservationTrouve = reservation.getDateEnd();
 
-                    // CONDITION
-                    System.out.println(dateDebutReservationTrouve.toString());
+                     /*
+                    Savoir si une chambre est libre lorsqu'on trouve une reservation déjà présente on check :
+                        - SI dateDebut de la reservation est entre dateDebutDemande et dateFinDemande
+                    ET  - SI dateFin de la reservation est entre dateDebutDemande et dateFinDemande
+                    ET  - SI dateDebut de la demande est entre dateDebut de la reservation et dateFin de la reservation
+                    ET  - SI dateFin de la demande est entre dateDebut de la reservation et dateFin de la reservation
+                     */
+                    if(dateDebutReservationTrouve.after(dateDebutDemande) && dateDebutReservationTrouve.before(dateFinDemande)){
+                        chambreDisponible = false;
+                    }
+                    if(dateFinReservationTrouve.after(dateDebutDemande) && dateFinReservationTrouve.before(dateFinDemande)){
+                        chambreDisponible = false;
+                    }
+                    if(dateDebutDemande.after(dateDebutReservationTrouve) && dateDebutDemande.before(dateFinReservationTrouve)){
+                        chambreDisponible = false;
+                    }
+                    if(dateFinDemande.after(dateDebutReservationTrouve) && dateFinDemande.before(dateFinReservationTrouve)){
+                        chambreDisponible = false;
+                    }
+
                 }
+                if (chambreDisponible){
+                    //listRoom.add(r);
 
+                    JSONObject tmp = new JSONObject();
+                    tmp.put("idHotel",h.getId());
+                    tmp.put("idChambre",r.getId());
+                    tmp.put("dateDebut",dateDebutDemande);
+                    tmp.put("dateFin",dateFinDemande);
+                    tmp.put("nbPersonne",message.get("nbPersonne"));
+                    tmp.put("prix",message.get("prix"));
+                    tmp.put("standing",message.get("standing"));
+                    tmp.put("ville",h.getCity());
+                    tmp.put("pays",h.getCountry());
 
-
+                    answer.put(counter,tmp);
+                    counter++;
+                }
             }
-        }
 
+            //System.out.println("liste des chambres disponible pour l'hotel : "+ h.getId() + " : " +listRoom.toString());
 
-
-        //renvoyer les hotels avec des chambres disponible
-
-
+       }
         return answer;
     }
 
-    private void sendMessage(String mess, AID id) {
+    private void sendMessage(JSONObject mess, AID id) {
         try {
             ACLMessage aclMessage = new ACLMessage(ACLMessage.REQUEST);
             aclMessage.addReceiver(id);
 
-            aclMessage.setContent(mess);
+            aclMessage.setContentObject(mess);
 
             myAgent.send(aclMessage);
         } catch (Exception ex) {
