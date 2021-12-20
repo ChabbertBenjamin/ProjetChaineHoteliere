@@ -11,8 +11,7 @@ public class Hotel {
     private String country;
     private int nbRoom;
 
-    private ArrayList<Reservation> listReservation;
-    private ArrayList<Room> listRoom;
+
 
     public Hotel(int id, String name, int standing, String city, String country, int nbRoom) {
         this.id = id;
@@ -21,22 +20,6 @@ public class Hotel {
         this.city = city;
         this.country = country;
         this.nbRoom = nbRoom;
-    }
-
-    public ArrayList<Room> getListRoom() {
-        return listRoom;
-    }
-
-    public void setListRoom(ArrayList<Room> listRoom) {
-        this.listRoom = listRoom;
-    }
-
-    public ArrayList<Reservation> getListReservation() {
-        return listReservation;
-    }
-
-    public void setListReservation(ArrayList<Reservation> listReservation) {
-        this.listReservation = listReservation;
     }
 
     public int getId() {
@@ -96,20 +79,7 @@ public class Hotel {
                 ", city='" + city + '\'' +
                 ", country='" + country + '\'' +
                 ", nbRoom=" + nbRoom +
-                ", listReservation=" + listReservation +
-                ", listRoom=" + listRoom +
                 '}';
     }
 
-    public static ArrayList<Reservation> getReservationfromRoom(ArrayList<Reservation> listReservation, int idRoom){
-        ArrayList<Reservation> listReservationConcernRoom = new ArrayList<>();
-
-        for (Reservation r: listReservation) {
-            if(r.getIdRoom() == idRoom){
-                listReservationConcernRoom.add(r);
-            }
-        }
-
-        return  listReservationConcernRoom;
-    }
 }

@@ -3,6 +3,7 @@ package fr.ul.miage.agent;
 import fr.ul.miage.entite.Hotel;
 import fr.ul.miage.entite.Reservation;
 import fr.ul.miage.entite.Room;
+import fr.ul.miage.model.ConnectBDD;
 import jade.core.AID;
 import jade.core.behaviours.Behaviour;
 import jade.lang.acl.ACLMessage;
@@ -10,15 +11,18 @@ import jade.lang.acl.MessageTemplate;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
 
 public class ResponderBehaviour extends Behaviour {
     private final static MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
     private final ArrayList<Hotel> listHotel;
-    public ResponderBehaviour(AgentChaineHoteliere agentChaineHoteliere, ArrayList<Hotel> listHotel) {
+    public ResponderBehaviour(AgentChaineHoteliere agentChaineHoteliere) {
         super(agentChaineHoteliere);
-        this.listHotel = listHotel;
+        this.listHotel = agentChaineHoteliere.getListHotel();
     }
 
     @Override
@@ -27,34 +31,11 @@ public class ResponderBehaviour extends Behaviour {
             ACLMessage aclMessage = myAgent.receive(mt);
             if (aclMessage != null) {
                 try {
-                    //String messageContent = aclMessage.getContent();
-
                     JSONObject msg = (JSONObject) aclMessage.getContentObject();
-
-                    //extraction de la date
-                    /*
-                    int posDateDebut = messageContent.indexOf("\"date_debut\"");
-                    int posDestination =messageContent.indexOf(",\"destination\"");
-
-                    String dateDebut = messageContent.substring(posDateDebut+"\"date_debut\"".length()+1,posDestination);
-
-                    int posDateFin = messageContent.indexOf("\"date_fin\"");
-                    int posNomChaine =messageContent.indexOf(",\"nomChaine\"");
-
-
-                    String dateFin = messageContent.substring(posDateFin+"\"date_fin\"".length()+1,posNomChaine);
-
-
-
-                    messageContent = messageContent.replace(dateDebut, "\""+dateDebut+ "\"");
-                    messageContent = messageContent.replace(dateFin, "\""+dateFin+ "\"");
-*/
                     System.out.println(myAgent.getLocalName() + ": I receive \n" + aclMessage + "\nwith content\n" + msg.toString());
-
                     JSONObject mess = processMessage(msg);
+                    // On envoit la réponse après avoir traité le message
                     sendMessage(mess, aclMessage.getSender());
-
-
                 }
                 catch (Exception ex) {
                     ex.printStackTrace();
@@ -71,12 +52,8 @@ public class ResponderBehaviour extends Behaviour {
         return false;
     }
 
-    public JSONObject processMessage(JSONObject message) throws ParseException, java.text.ParseException {
+    public JSONObject processMessage(JSONObject message) throws ParseException, java.text.ParseException, SQLException {
         JSONObject answer = new JSONObject();
-
-        //JSONParser parser = new JSONParser();
-        //JSONObject msgJSON=(JSONObject) parser.parse(message);
-
 
         //trouver les hotels qui correspondent au message
        ArrayList<Hotel> listHotelFound = new ArrayList<>();
@@ -87,24 +64,40 @@ public class ResponderBehaviour extends Behaviour {
         }
 
 
-
-
         Date dateDebutDemande = (Date) message.get("dateDebut");
         Date dateFinDemande = (Date) message.get("dateFin");
 
         int counter = 0;
         for (Hotel h:listHotelFound) {
-           ArrayList<Room> listRoom = new ArrayList<>();
-            for (Room r:h.getListRoom()) {
+
+            ConnectBDD DB = new ConnectBDD();
+            Statement stmt = DB.getConn().createStatement();
+            ResultSet res = stmt.executeQuery("SELECT * FROM room WHERE idhotel="+h.getId());
+            ArrayList<Room> listRoom = new ArrayList<>();
+            while(res.next()) {
+                Room room = new Room(res.getInt(1),res.getDouble(2),res.getInt(3),res.getInt(4));
+                listRoom.add(room);
+            }
+
+            for (Room r:listRoom) {
 
                 boolean chambreDisponible = true;
-                ArrayList<Reservation> listReservation = Hotel.getReservationfromRoom(h.getListReservation(),r.getId());
+
+                Statement stmt2 = DB.getConn().createStatement();
+                // Récupération des reservation par rapport aux hotels
+                ResultSet res2 = stmt2.executeQuery("SELECT * FROM reservation WHERE idroom="+r.getId());
+                ArrayList<Reservation> listReservation = new ArrayList<>();
+                while(res2.next()) {
+                    Reservation reservation = new Reservation(res2.getInt(1),res2.getInt(2),res2.getInt(3),res2.getDate(4),res2.getDate(5),res2.getDouble(6),res2.getInt(7));
+                    listReservation.add(reservation);
+                }
+
                 for (Reservation reservation:listReservation) {
                     Date dateDebutReservationTrouve = reservation.getDateStart();
                     Date dateFinReservationTrouve = reservation.getDateEnd();
 
                      /*
-                    Savoir si une chambre est libre lorsqu'on trouve une reservation déjà présente on check :
+                    Savoir si une chambre est libre : lorsqu'on trouve une reservation déjà présente on check :
                         - SI dateDebut de la reservation est entre dateDebutDemande et dateFinDemande
                     ET  - SI dateFin de la reservation est entre dateDebutDemande et dateFinDemande
                     ET  - SI dateDebut de la demande est entre dateDebut de la reservation et dateFin de la reservation
@@ -125,8 +118,8 @@ public class ResponderBehaviour extends Behaviour {
 
                 }
                 if (chambreDisponible){
-                    //listRoom.add(r);
 
+                    // Si on trouve une chambre disponible alors on créer un objet JSON correspondant à cette chambre pour la réponse
                     JSONObject tmp = new JSONObject();
                     tmp.put("idHotel",h.getId());
                     tmp.put("idChambre",r.getId());
@@ -146,6 +139,7 @@ public class ResponderBehaviour extends Behaviour {
             //System.out.println("liste des chambres disponible pour l'hotel : "+ h.getId() + " : " +listRoom.toString());
 
        }
+        // answer contient toute les chambres disponible en rapport avec les dates de rerservation du message reçu
         return answer;
     }
 

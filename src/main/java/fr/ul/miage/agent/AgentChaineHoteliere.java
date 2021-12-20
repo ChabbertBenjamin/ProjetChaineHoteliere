@@ -5,12 +5,11 @@ import fr.ul.miage.entite.Reservation;
 import fr.ul.miage.entite.Room;
 import fr.ul.miage.launch.Simu;
 import fr.ul.miage.model.ConnectBDD;
+import jade.core.Agent;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
-import jade.gui.GuiAgent;
-import jade.gui.GuiEvent;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,9 +17,10 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.logging.Level;
 
-public class AgentChaineHoteliere extends GuiAgent {
+public class AgentChaineHoteliere extends Agent {
     public static final int EXIT = 0;
 
+    // Contient seulement la list des hotels que notre agent doit gérer
     private ArrayList<Hotel> listHotel= new ArrayList<>();
 
 
@@ -32,46 +32,26 @@ public class AgentChaineHoteliere extends GuiAgent {
         //String test = (String) args[1];
 
         try {
+            // Connexion à la BDD
             ConnectBDD DB = new ConnectBDD();
             Statement stmt = DB.getConn().createStatement();
+            // Récupération des hotels
             ResultSet res = stmt.executeQuery("SELECT * FROM hotel");
             while(res.next()){
                 System.out.println(res.getInt(1)+"  "+res.getString(2) +"  "+res.getString(3));
                 Hotel h = new Hotel(res.getInt(1),res.getString(2),res.getInt(3),res.getString(4),res.getString(5),res.getInt(6));
-
-
-                Statement stmt2 = DB.getConn().createStatement();
-                ResultSet res2 = stmt2.executeQuery("SELECT * FROM reservation WHERE idhotel="+res.getInt(1));
-                ArrayList<Reservation> listReservation = new ArrayList<>();
-                while(res2.next()) {
-                    Reservation reservation = new Reservation(res2.getInt(1),res2.getInt(2),res2.getInt(3),res2.getDate(4),res2.getDate(5),res2.getDouble(6),res2.getInt(7));
-                    listReservation.add(reservation);
-                }
-                h.setListReservation(listReservation);
-
-
-                Statement stmt3 = DB.getConn().createStatement();
-                ResultSet res3 = stmt3.executeQuery("SELECT * FROM room WHERE idhotel="+res.getInt(1));
-                ArrayList<Room> listRoom = new ArrayList<>();
-                while(res3.next()) {
-                    Room room = new Room(res3.getInt(1),res3.getDouble(2),res3.getInt(3),res3.getInt(4));
-                    listRoom.add(room);
-                }
-                h.setListRoom(listRoom);
-
                 listHotel.add(h);
             }
-
-
-
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
         System.out.println("Salut je suis "+getLocalName()+" et je gères "+listHotel.size()+" hotel(s).");
         this.registerService();
-        ResponderBehaviour RB = new ResponderBehaviour(this, listHotel);
+
+
+        // L'agent attent un message
+        ResponderBehaviour RB = new ResponderBehaviour(this);
         this.addBehaviour(RB);
 
 
@@ -80,7 +60,7 @@ public class AgentChaineHoteliere extends GuiAgent {
 
     }
 
-    // On enregistre l'agent
+    // On enregistre l'agent comme un service
     private void registerService() {
         DFAgentDescription dfd = new DFAgentDescription();
         dfd.setName(super.getAID());
@@ -98,7 +78,7 @@ public class AgentChaineHoteliere extends GuiAgent {
         }
     }
 
-    // On termine l'agent
+    // On termine l'agent proprement s'il y a un problème
     @Override
     protected void takeDown(){
         try {
@@ -110,12 +90,7 @@ public class AgentChaineHoteliere extends GuiAgent {
         //window.dispose();
     }
 
-    @Override
-    protected void onGuiEvent(GuiEvent guiEvent) {
-        if (guiEvent.getType() == AgentChaineHoteliere.EXIT) {
-            doDelete();
-        }
-    }
+
 
     public ArrayList<Hotel> getListHotel() {
         return listHotel;

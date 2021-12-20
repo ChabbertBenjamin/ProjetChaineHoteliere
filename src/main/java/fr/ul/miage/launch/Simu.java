@@ -35,26 +35,21 @@ public class Simu {
 
         // ******************JADE******************
 
-        // allow to send arguments to the JADE launcher
+        // permettre d'envoyer des arguments au lancement de JADE
         var pp = new ExtendedProperties();
-        // add the gui
+        // ajout de l'interface
         pp.setProperty(Profile.GUI, "true");
         // add the Topic Management Service
-        pp.setProperty(Profile.SERVICES, "jade.core.messaging.TopicManagementService;jade.core.event.NotificationService");
+        //pp.setProperty(Profile.SERVICES, "jade.core.messaging.TopicManagementService;jade.core.event.NotificationService");
 
         var lesAgents = new StringBuilder();
         lesAgents.append("Ibis:fr.ul.miage.agent.AgentChaineHoteliere;");
-        //lesAgents.append("Steph:fr.ul.miage.agent.AgentChaineHoteliere(F1)");
-       /* lesAgents.append("client1:agencesVoyages.agents.TravellerAgent;");
-        lesAgents.append("agentCar:agencesVoyages.agents.AgenceAgent(agentsVoyage/car.csv);");
-        lesAgents.append("agentBus:agencesVoyages.agents.AgenceAgent(agentsVoyage/bus.csv);");
-        lesAgents.append("agentTrain:agencesVoyages.agents.AgenceAgent(agentsVoyage/train.csv);");
-        lesAgents.append("alert1:agencesVoyages.agents.AlertAgent");*/
+
         pp.setProperty(Profile.AGENTS, lesAgents.toString());
-        // create a default Profile
+        // creation d'un profil par defaut
         var pMain = new ProfileImpl(pp);
 
-        // launch the main jade container
+        // lancement du main-container de JADE
         Runtime.instance().createMainContainer(pMain);
 
     }

@@ -16,6 +16,7 @@ public class responderTest extends Behaviour {
 
     @Override
     public void action() {
+        // On affiche la réponse de l'agentChaineHoteliere pour vérifier qu'elle à bien été reçu
         while (true) {
             ACLMessage aclMessage = myAgent.receive(mt);
             if (aclMessage != null) {

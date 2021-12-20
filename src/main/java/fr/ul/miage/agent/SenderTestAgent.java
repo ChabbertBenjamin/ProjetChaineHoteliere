@@ -22,7 +22,7 @@ public class SenderTestAgent extends Agent {
 
 
 
-
+        // Création d'un objet JSON test similaire à ceux que notre agent doit recevoir avec le projet final
         Date aujourdhui = new Date();
         Calendar cal = Calendar.getInstance();
         cal.setTime(aujourdhui);
@@ -38,23 +38,22 @@ public class SenderTestAgent extends Agent {
         jObj.put("standing","3 étoiles");
         jObj.put("nomChaine","Ibis");
 
-        //MessageRechercheHotel messageRechercheHotel = new MessageRechercheHotel(1,aujourdhui,cal.getTime(),20,2,"Nancy","3 étoiles","Ibis");
 
 
         System.out.println("Hello. My name is " + this.getLocalName());
-        Object[] args = getArguments();
+        //Object[] args = getArguments();
         //String message = (String) args[0];
 
         AID aid = new AID();
 
         DFAgentDescription dfd = new DFAgentDescription();
-
+        // Recherche d'un agent pour lui envoyer un message
         try {
             DFAgentDescription[] result = DFService.search(this, dfd);
             String out = "";
             int i = 0;
             String service = "";
-           // System.out.println(obj.get("nomChaine").toString());
+           // On cherche un agent avec le nomChaine "Ibis" (car notre objet JSON à pour nomChaine: "Ibis"
             while ((service.compareTo(jObj.get("nomChaine").toString()) != 0) && (i < result.length)) {
                 DFAgentDescription desc = (DFAgentDescription) result[i];
                 Iterator iter2 = desc.getAllServices();
@@ -68,12 +67,14 @@ public class SenderTestAgent extends Agent {
                 }
                 System.out.println(aid.getName());
 
-
+                // On envoie le message à tous les agents trouvé
                 sendMessage(jObj, aid);
                 i++;
             }
         } catch (FIPAException fe) {
         }
+
+        // L'agent test est en attente d'une réponse
         responderTest RT = new responderTest(this);
         this.addBehaviour(RT);
 
