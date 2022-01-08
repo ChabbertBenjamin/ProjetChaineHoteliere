@@ -28,17 +28,34 @@ public class SenderTestAgent extends Agent {
         cal.setTime(aujourdhui);
         cal.add(Calendar.DAY_OF_MONTH, 1);
 
-        JSONObject jObj = new JSONObject();
-        jObj.put("idRequete",1);
-        jObj.put("dateDebut",aujourdhui);
-        jObj.put("dateFin",cal.getTime());
-        jObj.put("prix",20.0);
-        jObj.put("nbPersonne",2);
-        jObj.put("destination","Nancy");
-        jObj.put("standing","3 étoiles");
-        jObj.put("nomChaine","Ibis");
+        JSONObject msgRechercheHotel = new JSONObject();
+        msgRechercheHotel.put("idRequete",1);
+        msgRechercheHotel.put("dateDebut",aujourdhui);
+        msgRechercheHotel.put("dateFin",cal.getTime());
+        msgRechercheHotel.put("prix",20.0);
+        msgRechercheHotel.put("nbPersonne",2);
+        msgRechercheHotel.put("destination","Nancy");
+        msgRechercheHotel.put("standing","3 étoiles");
+        msgRechercheHotel.put("nomChaine","Ibis");
 
 
+
+
+
+
+
+        Date aujourdhui2 = new Date();
+        Calendar cal2 = Calendar.getInstance();
+        cal2.setTime(aujourdhui2);
+        cal2.add(Calendar.DAY_OF_MONTH, 1);
+
+        JSONObject msgReservationHotel = new JSONObject();
+        msgReservationHotel.put("idRequete",1);
+        msgReservationHotel.put("idHotel",1);
+        msgReservationHotel.put("nbPersonne",2);
+        msgReservationHotel.put("dateDebut",aujourdhui2);
+        msgReservationHotel.put("dateFin",cal2.getTime());
+        msgReservationHotel.put("nomChaine","Ibis");
 
         System.out.println("Hello. My name is " + this.getLocalName());
         //Object[] args = getArguments();
@@ -54,13 +71,13 @@ public class SenderTestAgent extends Agent {
             int i = 0;
             String service = "";
            // On cherche un agent avec le nomChaine "Ibis" (car notre objet JSON à pour nomChaine: "Ibis"
-            while ((service.compareTo(jObj.get("nomChaine").toString()) != 0) && (i < result.length)) {
+            while ((service.compareTo(msgRechercheHotel.get("nomChaine").toString()) != 0) && (i < result.length)) {
                 DFAgentDescription desc = (DFAgentDescription) result[i];
                 Iterator iter2 = desc.getAllServices();
                 while (iter2.hasNext()) {
                     ServiceDescription sd = (ServiceDescription) iter2.next();
                     service = sd.getName();
-                    if (service.compareTo(jObj.get("nomChaine").toString()) == 0) {
+                    if (service.compareTo(msgReservationHotel.get("nomChaine").toString()) == 0) {
                         aid = desc.getName();
                         break;
                     }
@@ -68,7 +85,8 @@ public class SenderTestAgent extends Agent {
                 System.out.println(aid.getName());
 
                 // On envoie le message à tous les agents trouvé
-                sendMessage(jObj, aid);
+                sendMessage(msgRechercheHotel, aid);
+                //sendMessage(msgReservationHotel, aid);
                 i++;
             }
         } catch (FIPAException fe) {

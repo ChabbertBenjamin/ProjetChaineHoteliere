@@ -32,7 +32,13 @@ public class ResponderBehaviour extends Behaviour {
             if (aclMessage != null) {
                 try {
                     JSONObject msg = (JSONObject) aclMessage.getContentObject();
+
+
+
+
                     System.out.println(myAgent.getLocalName() + ": I receive \n" + aclMessage + "\nwith content\n" + msg.toString());
+                    String msgType = getTypeMessage(msg);
+                    System.out.println(msgType);
                     JSONObject mess = processMessage(msg);
                     // On envoit la réponse après avoir traité le message
                     sendMessage(mess, aclMessage.getSender());
@@ -50,6 +56,14 @@ public class ResponderBehaviour extends Behaviour {
     @Override
     public boolean done() {
         return false;
+    }
+
+    public String getTypeMessage(JSONObject message){
+        if(message.get("idHotel") != null){
+            return "reservation";
+        }else{
+            return "recherche";
+        }
     }
 
     public JSONObject processMessage(JSONObject message) throws ParseException, java.text.ParseException, SQLException {
