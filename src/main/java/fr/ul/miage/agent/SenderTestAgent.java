@@ -85,8 +85,8 @@ public class SenderTestAgent extends Agent {
                 System.out.println(aid.getName());
 
                 // On envoie le message à tous les agents trouvé
-                sendMessage(msgRechercheHotel, aid);
-                //sendMessage(msgReservationHotel, aid);
+                //sendMessage(msgRechercheHotel, aid);
+                sendMessage(msgReservationHotel, aid);
                 i++;
             }
         } catch (FIPAException fe) {

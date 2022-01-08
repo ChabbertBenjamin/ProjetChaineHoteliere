@@ -22,7 +22,7 @@ public class responderTest extends Behaviour {
             if (aclMessage != null) {
                 try {
                     JSONObject msg = (JSONObject) aclMessage.getContentObject();
-                    System.out.println(myAgent.getLocalName() + ": I receive \n" + aclMessage + "\nwith content\n" + msg.toString());
+                    System.out.println(myAgent.getLocalName() + ": I receive a message with content\n" + msg.toString());
                 }
                 catch (Exception ex) {
                     ex.printStackTrace();

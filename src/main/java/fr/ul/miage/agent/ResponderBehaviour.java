@@ -9,7 +9,6 @@ import jade.core.behaviours.Behaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,9 +19,11 @@ import java.util.Date;
 public class ResponderBehaviour extends Behaviour {
     private final static MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
     private final ArrayList<Hotel> listHotel;
+    private int totalNbBedDispo;
     public ResponderBehaviour(AgentChaineHoteliere agentChaineHoteliere) {
         super(agentChaineHoteliere);
         this.listHotel = agentChaineHoteliere.getListHotel();
+        this.totalNbBedDispo = 0;
     }
 
     @Override
@@ -36,10 +37,10 @@ public class ResponderBehaviour extends Behaviour {
 
 
 
-                    System.out.println(myAgent.getLocalName() + ": I receive \n" + aclMessage + "\nwith content\n" + msg.toString());
+                    System.out.println(myAgent.getLocalName() + ": I receive a message with content\n" + msg.toString());
                     String msgType = getTypeMessage(msg);
-                    System.out.println(msgType);
-                    JSONObject mess = processMessage(msg);
+                    //System.out.println(msgType);
+                    JSONObject mess = processMessage(msg, msgType);
                     // On envoit la réponse après avoir traité le message
                     sendMessage(mess, aclMessage.getSender());
                 }
@@ -66,18 +67,38 @@ public class ResponderBehaviour extends Behaviour {
         }
     }
 
-    public JSONObject processMessage(JSONObject message) throws ParseException, java.text.ParseException, SQLException {
+    public JSONObject processMessage(JSONObject message, String msgType) throws SQLException {
         JSONObject answer = new JSONObject();
-
-        //trouver les hotels qui correspondent au message
-       ArrayList<Hotel> listHotelFound = new ArrayList<>();
-        for (Hotel h:listHotel) {
-            if(h.getCity().equals(message.get("destination"))){
-                listHotelFound.add(h);
+        // Si c'est une réservation, on cherche l'hotel en fonction de l'id de l'hôtel dans le message
+        if(msgType.equals("reservation")){
+            ArrayList<Hotel> listHotelFound = new ArrayList<>();
+            for (Hotel h:listHotel) {
+                if(message.get("idHotel").equals(h.getId())){
+                    listHotelFound.add(h);
+                }
             }
+            JSONObject resultRecherche = rechercheHotel(listHotelFound, message);
+            System.out.println("Résultat de la recherche : " + resultRecherche.toString());
+            // La réponse est une confirmation ou un refus, si il n'y a pas de chambre disponible
+            answer = reservationMessage(message, resultRecherche);
         }
+        // Si c'est une recherche, on cherche les hotels en fonction de la destination
+        if(msgType.equals("recherche")){
+            //trouver les hotels qui correspondent au message
+            ArrayList<Hotel> listHotelFound = new ArrayList<>();
+            for (Hotel h:listHotel) {
+                if(h.getCity().equals(message.get("destination"))){
+                    listHotelFound.add(h);
+                }
+            }
+            answer = rechercheHotel(listHotelFound, message);
+        }
+        // answer contient soit les chambres disponible soit une confirmation de reservation ou un refus suivant si la chambre est dispobible
+        return answer;
+    }
 
-
+    public JSONObject rechercheHotel(ArrayList<Hotel> listHotelFound, JSONObject message) throws SQLException {
+        JSONObject answer = new JSONObject();
         Date dateDebutDemande = (Date) message.get("dateDebut");
         Date dateFinDemande = (Date) message.get("dateFin");
 
@@ -86,13 +107,12 @@ public class ResponderBehaviour extends Behaviour {
 
             ConnectBDD DB = new ConnectBDD();
             Statement stmt = DB.getConn().createStatement();
-            ResultSet res = stmt.executeQuery("SELECT * FROM room WHERE idhotel="+h.getId());
+            ResultSet res = stmt.executeQuery("SELECT * FROM room WHERE idhotel="+h.getId()/*+"and nbbed >=" + message.get("nbPersonne")*/);
             ArrayList<Room> listRoom = new ArrayList<>();
             while(res.next()) {
                 Room room = new Room(res.getInt(1),res.getDouble(2),res.getInt(3),res.getInt(4));
                 listRoom.add(room);
             }
-
             for (Room r:listRoom) {
 
                 boolean chambreDisponible = true;
@@ -132,7 +152,7 @@ public class ResponderBehaviour extends Behaviour {
 
                 }
                 if (chambreDisponible){
-
+                    this.totalNbBedDispo += r.getNbBed();
                     // Si on trouve une chambre disponible alors on créer un objet JSON correspondant à cette chambre pour la réponse
                     JSONObject tmp = new JSONObject();
                     tmp.put("idHotel",h.getId());
@@ -152,10 +172,42 @@ public class ResponderBehaviour extends Behaviour {
 
             //System.out.println("liste des chambres disponible pour l'hotel : "+ h.getId() + " : " +listRoom.toString());
 
-       }
-        // answer contient toute les chambres disponible en rapport avec les dates de rerservation du message reçu
+        }
         return answer;
     }
+    public JSONObject reservationMessage(JSONObject message, JSONObject listRoomDispo) throws SQLException {
+        JSONObject answer = new JSONObject();
+
+        // Si listRoomDispo est vide alors on envoie un refus
+        if(listRoomDispo.isEmpty()){
+            answer.put("IdRequete",message.get("idRequete"));
+            answer.put("erreur","Aucune chambre disponible");
+        }
+
+        if((int) message.get("nbPersonne")> this.totalNbBedDispo){
+            System.out.println("Le nombre de personne demandé est trop important");
+        }
+
+        /*
+        RENVOYER CONFIRMATION RESERVATION
+        {
+            idReservation : id
+            idHotel : id
+            numChambre : int
+            ville : string
+            pays : string
+            nbPersonnes : int
+            prix : Double
+            standing : int
+            dateDebut : Date
+            dateFin : Date
+        }
+         */
+
+
+        return answer;
+    }
+
 
     private void sendMessage(JSONObject mess, AID id) {
         try {
