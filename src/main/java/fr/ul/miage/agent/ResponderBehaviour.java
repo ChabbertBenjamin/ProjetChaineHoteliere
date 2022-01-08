@@ -179,13 +179,9 @@ public class ResponderBehaviour extends Behaviour {
         JSONObject answer = new JSONObject();
 
         // Si listRoomDispo est vide alors on envoie un refus
-        if(listRoomDispo.isEmpty()){
+        if(listRoomDispo.isEmpty() || (int) message.get("nbPersonne") > this.totalNbBedDispo){
             answer.put("IdRequete",message.get("idRequete"));
-            answer.put("erreur","Aucune chambre disponible");
-        }
-
-        if((int) message.get("nbPersonne")> this.totalNbBedDispo){
-            System.out.println("Le nombre de personne demandé est trop important");
+            answer.put("erreur","Aucune chambre disponible pour le nombre de personne demandé");
         }
 
         /*
