@@ -195,7 +195,6 @@ public class ResponderBehaviour extends Behaviour {
         JSONObject answer = new JSONObject();
 
         // Si listRoomDispo est vide ou que l'hôtel n'a pas la capacité pour le nombre de personnes demandé, on envoie un refus
-
         if ((int) message.get("nbPersonne") > this.totalNbBedDispo) {
             answer.put("IdRequete", message.get("idRequete"));
             answer.put("erreur", "Aucune chambre disponible pour le nombre de personnes demandé");
@@ -210,21 +209,24 @@ public class ResponderBehaviour extends Behaviour {
             ArrayList<ArrayList<Room>> listRoomPotentiel = new ArrayList<>();
             int bestRoomIdFromList = -1;
 
+            // On va regarder les combinaisons de chambres possible et trouver la meilleure (k = le nombre de chambre dans la combinaison)
             for (int k = 1; k <= listRoom.size(); k++) {
                 ArrayList<Room> combinaison = new ArrayList<>();
                 combinaison.clear();
                 //Combinaison de 1 seule chambre
-
                 if (k == 1) {
+
 
                     for (int i = 0; i < listRoom.size(); i++) {
                         if (listRoom.get(i).getNbBed() == (int) message.get("nbPersonne")) {
                             combinaison.add(listRoom.get(i));
                             listRoomPotentiel.add(combinaison);
+                            // On garde à chaque fois que la meilleur combinaison
                             bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
                             perfectCombinaison = true;
                             break;
                         }
+                        // Si la combinaison respecte le nombre de place demandé
                         if (listRoom.get(i).getNbBed() > (int) message.get("nbPersonne")) {
                             combinaison.add(listRoom.get(i));
                             bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
@@ -232,6 +234,7 @@ public class ResponderBehaviour extends Behaviour {
                         }
                         combinaison.clear();
                     }
+                    //Si on a trouvé une combinaison sans perdre de lit alors on stop tout car c'est la meilleur possible
                     if (perfectCombinaison) {
                         break;
                     }
@@ -239,7 +242,6 @@ public class ResponderBehaviour extends Behaviour {
                         listRoomPotentiel.add(combinaison);
                     }
                     combinaison.clear();
-
                     // Combinaison de plusieurs chambres
                 } else {
                     int nbBedInCombinaison = 999999;
@@ -248,40 +250,46 @@ public class ResponderBehaviour extends Behaviour {
                     while (nbBedInCombinaison > (int) message.get("nbPersonne")) {
                         nbBedInCombinaison=0;
 
-                        //Créer la combinaison de k chambres
+                        // créer la combinaison de k chambre grâce à la combinaison précédente
                         combinaison = createCombinaison(k, listRoom, new ArrayList<>(), combinaison);
+                        // Si combinaison == null c'est qu'on a plus de combinaison à tester pour ce k
                         if(combinaison == null){
                             break;
                         }
                         for (Room r : combinaison) {
                             nbBedInCombinaison += r.getNbBed();
                         }
+                        // Si la combinaison ne fait pas perdre de lit on stop tout car on a trouvé la meilleure possible
                         if(nbBedInCombinaison == (int) message.get("nbPersonne")){
                             bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
                             perfectCombinaison=true;
                             break;
                         }
+                        // On garde que la meilleure combinaison pour ce k
                         if(nbBedInCombinaison > (int) message.get("nbPersonne")){
                             bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
                         }else{
                             break;
                         }
                     }
+                    //Si on a trouvé une combinaison sans perdre de lit alors on stop tout car c'est la meilleur possible
                     if(perfectCombinaison){
                         break;
                     }
+                    // On ajoute dans une listRoomPotentiel la meilleure combinaison trouvé pour ce k
                     ArrayList<Room> result = new ArrayList<>(bestCombinaison);
                     listRoomPotentiel.add(result);
                     bestCombinaison.clear();
                 }
             }
 
-            System.out.println("on a trouvé les combinaisons : " + listRoomPotentiel);
+            //System.out.println("on a trouvé les combinaisons : " + listRoomPotentiel);
 
-            // Regarder la meilleur combinaison dans listRoomPotentiel
+            //Si on a pas trouvé de combinaison qui ne fait pas perdre de lit, on clear la dernière combinaison trouvé
             if(!perfectCombinaison){
                 bestCombinaison.clear();
             }
+            // On regarde quelle est la meilleure combinaison (listRoomPotentiel contient la meilleur combinaison pour chaque k)
             for (ArrayList<Room> combinaison:listRoomPotentiel) {
                 bestCombinaison = findBestCombinaison(bestCombinaison,combinaison);
             }
@@ -369,6 +377,7 @@ public class ResponderBehaviour extends Behaviour {
     }
 
     public ArrayList<Room> createCombinaison(int tailleCombinaison, ArrayList<Room> listRoom, ArrayList<Room> combinaison, ArrayList<Room> previousCombinaison) {
+        // Si il n'y a pas de combinaison précédente, on créer la première dans l'ordre
         if (previousCombinaison.size()==0){
             for (int i = 0; i < tailleCombinaison; i++) {
                 combinaison.add(listRoom.get(i));
@@ -376,6 +385,7 @@ public class ResponderBehaviour extends Behaviour {
             return combinaison;
         }
 
+        // Pour créer la combinaison en fonction de la précédente, on va regarder l'index+1, Si l'index+1 peut changer, alors on ne change pas l'index actuel, si l'index+1 ne peut pas changer alors on changer l'index actuel
         int index=-1;
         for (int i = -1; i < tailleCombinaison; i++) {
             if (i!= tailleCombinaison-1){
@@ -387,6 +397,7 @@ public class ResponderBehaviour extends Behaviour {
                 combinaison.add(listRoom.get(index+1));
                 break;
             }
+            // Si l'index1 ne peut pas changer
             if(index >= listRoom.size()-(tailleCombinaison-1)+i){
                 if(i==-1){
                     return null;
@@ -398,6 +409,7 @@ public class ResponderBehaviour extends Behaviour {
                 }
                 break;
             }else{
+                //Si l'index+1 peut changer alors on remet l'index à la même position
                 if(i != -1){
                     combinaison.add(previousCombinaison.get(i));
                 }
@@ -416,6 +428,7 @@ public class ResponderBehaviour extends Behaviour {
         int nbBedCombinaison2 =0;
         boolean testCombinaison1Empty = false;
         boolean testCombinaison2Empty = false;
+        // Si la combinaison1 n'est pas null alors on compte le nombre de lit qu'elle offre
         if(combinaison1 != null && !combinaison1.isEmpty()){
             for (Room r: combinaison1) {
                 nbBedCombinaison1 += r.getNbBed();
@@ -424,15 +437,16 @@ public class ResponderBehaviour extends Behaviour {
             answer.addAll(combinaison2);
             testCombinaison1Empty = true;
         }
-
+        // Si la combinaison2 n'est pas null alors on compte le nombre de lit qu'elle offre
         if(combinaison2 != null && !combinaison2.isEmpty()){
             for (Room r: combinaison2) {
                 nbBedCombinaison2 += r.getNbBed();
             }
         }else{
             answer.addAll(combinaison1);
-            testCombinaison1Empty = true;
+            testCombinaison2Empty = true;
         }
+        // Si les combinaisons ne sont pas vides alors on regarde celle qui offrent le moins de lit (car dans tous les cas elles offrent plus ou autant de lit que demandé)
         if(!testCombinaison1Empty || !testCombinaison2Empty){
             if(nbBedCombinaison1 <= nbBedCombinaison2){
                 answer.addAll(combinaison1);
