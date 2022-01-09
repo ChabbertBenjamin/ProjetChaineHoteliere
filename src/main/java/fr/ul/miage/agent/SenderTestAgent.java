@@ -52,7 +52,7 @@ public class SenderTestAgent extends Agent {
         JSONObject msgReservationHotel = new JSONObject();
         msgReservationHotel.put("idRequete",1);
         msgReservationHotel.put("idHotel",1);
-        msgReservationHotel.put("nbPersonne",2);
+        msgReservationHotel.put("nbPersonne",4);
         msgReservationHotel.put("dateDebut",aujourdhui2);
         msgReservationHotel.put("dateFin",cal2.getTime());
         msgReservationHotel.put("nomChaine","Ibis");

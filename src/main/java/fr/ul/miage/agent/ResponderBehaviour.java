@@ -10,11 +10,11 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import org.json.simple.JSONObject;
 
+import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Date;
+import java.util.*;
 
 public class ResponderBehaviour extends Behaviour {
     private final static MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
@@ -78,9 +78,10 @@ public class ResponderBehaviour extends Behaviour {
                 }
             }
             JSONObject resultRecherche = rechercheHotel(listHotelFound, message);
+
             System.out.println("Résultat de la recherche : " + resultRecherche.toString());
             // La réponse est une confirmation ou un refus, si il n'y a pas de chambre disponible
-            answer = reservationMessage(message, resultRecherche);
+            answer = reservationMessage(message, jsonToList(resultRecherche));
         }
         // Si c'est une recherche, on cherche les hotels en fonction de la destination
         if(msgType.equals("recherche")){
@@ -95,6 +96,22 @@ public class ResponderBehaviour extends Behaviour {
         }
         // answer contient soit les chambres disponible soit une confirmation de reservation ou un refus suivant si la chambre est dispobible
         return answer;
+    }
+    public ArrayList<Room> jsonToList(JSONObject jsonlist) throws SQLException {
+        ArrayList<Room> listRoom = new ArrayList<>();
+        for (int i = 0; i < jsonlist.size() ; i++) {
+            JSONObject tmp = (JSONObject) jsonlist.get(i);
+
+            ConnectBDD DB = new ConnectBDD();
+            Statement stmt = DB.getConn().createStatement();
+            ResultSet res = stmt.executeQuery("SELECT * FROM room WHERE id="+tmp.get("idChambre"));
+            while(res.next()) {
+                Room room = new Room(res.getInt(1),res.getDouble(2),res.getInt(3),res.getInt(4));
+                listRoom.add(room);
+            }
+        }
+
+         return listRoom;
     }
 
     public JSONObject rechercheHotel(ArrayList<Hotel> listHotelFound, JSONObject message) throws SQLException {
@@ -175,21 +192,103 @@ public class ResponderBehaviour extends Behaviour {
         }
         return answer;
     }
-    public JSONObject reservationMessage(JSONObject message, JSONObject listRoomDispo) throws SQLException {
+    public JSONObject reservationMessage(JSONObject message, ArrayList<Room> listRoom) throws SQLException {
         JSONObject answer = new JSONObject();
 
-        // Si listRoomDispo est vide alors on envoie un refus
-        if(listRoomDispo.isEmpty() || (int) message.get("nbPersonne") > this.totalNbBedDispo){
+        // Si listRoomDispo est vide ou que l'hôtel n'a pas la capacité pour le nombre de personnes demandé, on envoie un refus
+        if((int) message.get("nbPersonne") > this.totalNbBedDispo){
             answer.put("IdRequete",message.get("idRequete"));
-            answer.put("erreur","Aucune chambre disponible pour le nombre de personne demandé");
-        }
+            answer.put("erreur","Aucune chambre disponible pour le nombre de personnes demandé");
+        }else{
+            //Tri des chambres par rapport à leurs nombre de lit (décroissant)
+            listRoom.sort((r1, r2) -> r2.getNbBed()-r1.getNbBed());
+            ArrayList<Room> bestCombinaison = new ArrayList<>();
+            ArrayList<ArrayList<Room>> combinaisonDejaTest = new ArrayList();
+            // Une perfectCombinaison est une combinaison de chambre qui ne laisse aucun lit vide
+            boolean perfectCombinaison = false;
+            int idRoomInList=-1;
+            ArrayList<ArrayList<Room>> listRoomPotentiel = new ArrayList<>();
+            int bestRoomIdFromList = -1;
+            for (int k = 0; k < listRoom.size(); k++) {
 
-        /*
+                //Combinaison de 1 seule chambre
+                if(k==0){
+
+                    Room room = null;
+                    for (int i = 0; i <listRoom.size() ; i++) {
+                        if(listRoom.get(i).getNbBed() >= (int) message.get("nbPersonne")){
+                            room = listRoom.get(i);
+                            bestRoomIdFromList = i;
+                        }
+                    }
+                    if(bestRoomIdFromList == (int) message.get("nbPersonne")){
+                        idRoomInList=bestRoomIdFromList;
+                        break;
+                    }
+
+                    if (bestRoomIdFromList != -1){
+                        ArrayList<Room> uniqueRoom = new ArrayList<>();
+                        uniqueRoom.add(room);
+                        listRoomPotentiel.add(uniqueRoom);
+                    }
+                // Combinaison de plusieurs chambres
+                }else{
+
+                }
+
+
+
+                if ((bestRoomIdFromList == -1 || listRoom.get(bestRoomIdFromList).getNbBed() > (int) message.get("nbPersonne")) && listRoom.size() > 1){
+                    // Passe à une combinaison de 2 chambres
+                    int nbBed =0;
+                    ArrayList<Room> combinaison = new ArrayList<>();
+                    for (int i = 0; i < listRoom.size() ; i++) {
+                        combinaison.add(listRoom.get(i));
+                        nbBed += listRoom.get(i).getNbBed();
+                        for (int j = i+1; j < listRoom.size() ; j++) {
+                            combinaison.add(listRoom.get(j));
+                            nbBed += listRoom.get(j).getNbBed();
+                            if(nbBed >= (int) message.get("nbPersonne")){
+                                bestCombinaison = findBestCombinaison(bestCombinaison,combinaison);
+                            }
+                            int bedInCombinaison =0;
+                            for (Room r2:bestCombinaison) {
+                                bedInCombinaison += r2.getNbBed();
+                            }
+                            if(bedInCombinaison ==(int) message.get("nbPersonne")){
+
+                                perfectCombinaison = true;
+                                break;
+                            }
+                            combinaison.remove(combinaison.size()-1);
+                            nbBed -= listRoom.get(j).getNbBed();
+                        }
+                        if(perfectCombinaison){
+                            break;
+                        }
+                        combinaison.remove(combinaison.size()-1);
+                        nbBed -= listRoom.get(i).getNbBed();
+                    }
+                    if (perfectCombinaison){
+                        break;
+                    }
+                    listRoomPotentiel.add(bestCombinaison);
+                    bestCombinaison =null;
+                }
+                if (perfectCombinaison){
+                    break;
+                }
+            }
+
+            System.out.println("on a trouvé les combinaisons : " + listRoomPotentiel);
+
+            System.out.println("la meilleur combinaison est : " + bestCombinaison);
+              /*
         RENVOYER CONFIRMATION RESERVATION
         {
             idReservation : id
             idHotel : id
-            numChambre : int
+            nbChambres : int
             ville : string
             pays : string
             nbPersonnes : int
@@ -200,8 +299,39 @@ public class ResponderBehaviour extends Behaviour {
         }
          */
 
+        }
+        return answer;
+    }
+
+    public ArrayList<Room> findBestCombinaison(ArrayList<Room> combinaison1,ArrayList<Room> combinaison2){
+        ArrayList<Room> answer = new ArrayList<>();
+        int nbBedCombinaison1 =0;
+        int nbBedCombinaison2 =0;
+        boolean test = false;
+        if(combinaison1 != null && !combinaison1.isEmpty()){
+            for (Room r: combinaison1) {
+                nbBedCombinaison1 += r.getNbBed();
+            }
+        }else{
+            answer.addAll(combinaison2);
+            test = true;
+        }
+        if(!test){
+            for (Room r: combinaison2) {
+                nbBedCombinaison2 += r.getNbBed();
+            }
+
+            if(nbBedCombinaison1 <= nbBedCombinaison2){
+                answer.addAll(combinaison1);
+            }else{
+                answer.addAll(combinaison2);
+            }
+        }
+
+
 
         return answer;
+
     }
 
 
