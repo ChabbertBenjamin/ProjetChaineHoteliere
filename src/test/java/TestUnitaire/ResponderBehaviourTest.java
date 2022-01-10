@@ -3,6 +3,7 @@ package TestUnitaire;
 import fr.ul.miage.agent.AgentChaineHoteliere;
 import fr.ul.miage.agent.ResponderBehaviour;
 import fr.ul.miage.entite.Room;
+import org.checkerframework.checker.units.qual.A;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -89,6 +90,37 @@ public class ResponderBehaviourTest {
         previousCombinaison.add(r5);
         previousCombinaison.add(r6);
         assertNull(test.createCombinaison(5,listRoom,previousCombinaison));
+    }
+
+    @Test
+    public void FindBestCombinaisonTest(){
+        Room r1 = new Room(1,20.0,2,1);
+        Room r2 = new Room(2,50.0,5,1);
+        Room r3 = new Room(3,40.0,4,1);
+        Room r4 = new Room(4,25.0,3,1);
+        ArrayList<Room> combinaison1 = new ArrayList<>();
+        ArrayList<Room> combinaison2 = new ArrayList<>();
+
+        combinaison2.add(r2);
+        combinaison2.add(r4);
+        assertArrayEquals(combinaison2.toArray(), test.findBestCombinaison(combinaison1,combinaison2).toArray());
+        combinaison2.clear();
+
+        combinaison1.add(r4);
+        combinaison1.add(r1);
+        assertArrayEquals(combinaison1.toArray(), test.findBestCombinaison(combinaison1,combinaison2).toArray());
+        combinaison1.clear();
+
+        combinaison1.add(r2);
+        combinaison1.add(r3);
+        combinaison2.add(r2);
+        combinaison2.add(r4);
+        assertArrayEquals(combinaison2.toArray(), test.findBestCombinaison(combinaison1,combinaison2).toArray());
+        combinaison1.clear();
+        combinaison2.clear();
+
+
+
     }
 
 }
