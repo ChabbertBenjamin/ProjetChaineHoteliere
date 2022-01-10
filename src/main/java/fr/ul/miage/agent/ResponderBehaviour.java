@@ -251,7 +251,7 @@ public class ResponderBehaviour extends Behaviour {
                         nbBedInCombinaison=0;
 
                         // créer la combinaison de k chambre grâce à la combinaison précédente
-                        combinaison = createCombinaison(k, listRoom, new ArrayList<>(), combinaison);
+                        combinaison = createCombinaison(k, listRoom, combinaison);
                         // Si combinaison == null c'est qu'on a plus de combinaison à tester pour ce k
                         if(combinaison == null){
                             break;
@@ -376,8 +376,9 @@ public class ResponderBehaviour extends Behaviour {
         return answer;
     }
 
-    public ArrayList<Room> createCombinaison(int tailleCombinaison, ArrayList<Room> listRoom, ArrayList<Room> combinaison, ArrayList<Room> previousCombinaison) {
-        // Si il n'y a pas de combinaison précédente, on créer la première dans l'ordre
+    public ArrayList<Room> createCombinaison(int tailleCombinaison, ArrayList<Room> listRoom, ArrayList<Room> previousCombinaison) {
+        // S'il n'y a pas de combinaison précédente, on créer la première dans l'ordre
+        ArrayList<Room> combinaison = new ArrayList<>();
         if (previousCombinaison.size()==0){
             for (int i = 0; i < tailleCombinaison; i++) {
                 combinaison.add(listRoom.get(i));
