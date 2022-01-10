@@ -44,6 +44,7 @@ public class ResponderBehaviourTest {
         Room r10 = new Room(10,30.0,3,1);
         ArrayList<Room> listRoom = new ArrayList<>(Arrays.asList(r1,r2,r3,r4,r5,r6,r7,r8,r9,r10));
         listRoom.sort((room1, room2) -> room2.getNbBed() - room1.getNbBed());
+        System.out.println(listRoom);
         //ResponderBehaviour test = new ResponderBehaviour(serviceAgent);
         ArrayList<Room> previousCombinaison = new ArrayList<>();
         ArrayList<Room> combinaisonReturn = new ArrayList<>();
@@ -54,12 +55,40 @@ public class ResponderBehaviourTest {
         combinaisonReturn.clear();
         previousCombinaison.clear();
 
+        previousCombinaison.add(r2);
+        previousCombinaison.add(r3);
+        previousCombinaison.add(r10);
+        previousCombinaison.add(r1);
+        previousCombinaison.add(r4);
+        combinaisonReturn.add(r2);
+        combinaisonReturn.add(r3);
+        combinaisonReturn.add(r10);
+        combinaisonReturn.add(r1);
+        combinaisonReturn.add(r7);
+        assertArrayEquals(combinaisonReturn.toArray(),test.createCombinaison(5,listRoom,previousCombinaison).toArray());
+        combinaisonReturn.clear();
+        previousCombinaison.clear();
 
-        //previousCombinaison.add();
-        //combinaisonReturn.add(r2);
-        //combinaisonReturn.add(r3);
-        //assertArrayEquals(combinaisonReturn.toArray(),test.createCombinaison(2,listRoom,previousCombinaison).toArray());
-        //combinaisonReturn.clear();
+        previousCombinaison.add(r2);
+        previousCombinaison.add(r4);
+        previousCombinaison.add(r9);
+        previousCombinaison.add(r5);
+        previousCombinaison.add(r6);
+        combinaisonReturn.add(r2);
+        combinaisonReturn.add(r7);
+        combinaisonReturn.add(r9);
+        combinaisonReturn.add(r5);
+        combinaisonReturn.add(r6);
+        assertArrayEquals(combinaisonReturn.toArray(),test.createCombinaison(5,listRoom,previousCombinaison).toArray());
+        combinaisonReturn.clear();
+        previousCombinaison.clear();
+
+        previousCombinaison.add(r4);
+        previousCombinaison.add(r7);
+        previousCombinaison.add(r9);
+        previousCombinaison.add(r5);
+        previousCombinaison.add(r6);
+        assertNull(test.createCombinaison(5,listRoom,previousCombinaison));
     }
 
 }
