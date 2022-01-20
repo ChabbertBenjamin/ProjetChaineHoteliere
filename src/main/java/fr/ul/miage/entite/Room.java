@@ -1,11 +1,16 @@
 package fr.ul.miage.entite;
 
+import fr.ul.miage.repository.DatabaseManager;
+
+import java.sql.SQLException;
+
 public class Room {
 
     private int id;
     private Double price;
     private int nbBed;
     private int idHotel;
+    DatabaseManager dm = new DatabaseManager();
 
     public Room(int id, Double price, int nbBed, int idHotel) {
         this.id = id;
@@ -44,6 +49,22 @@ public class Room {
 
     public void setIdHotel(int idHotel) {
         this.idHotel = idHotel;
+    }
+
+    public double applyHighSeasonIndex(Double _price) throws SQLException {
+        return _price * dm.getHighSeasonIndex();
+    }
+
+    public double applyLowSeasonIndex(Double _price) throws SQLException {
+        return _price * dm.getLowSeasonIndex();
+    }
+
+    public double applyWeekIndex(Double _price) throws SQLException {
+        return _price * dm.getWeekIndex();
+    }
+
+    public double applyWeekendIndex(Double _price) throws SQLException {
+        return _price * dm.getWeekendIndex();
     }
 
     @Override

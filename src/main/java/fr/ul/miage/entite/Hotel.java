@@ -11,8 +11,6 @@ public class Hotel {
     private String country;
     private int nbRoom;
 
-
-
     public Hotel(int id, String name, int standing, String city, String country, int nbRoom) {
         this.id = id;
         this.name = name;
