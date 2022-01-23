@@ -51,20 +51,20 @@ public class Room {
         this.idHotel = idHotel;
     }
 
-    public double applyHighSeasonIndex(Double _price) throws SQLException {
-        return _price * dm.getHighSeasonIndex();
+    public double getHighSeasonPrice() throws SQLException {
+        return this.price * dm.getHighSeasonIndex();
     }
 
-    public double applyLowSeasonIndex(Double _price) throws SQLException {
-        return _price * dm.getLowSeasonIndex();
+    public double getLowSeasonPrice() throws SQLException {
+        return this.price * dm.getLowSeasonIndex();
     }
 
-    public double applyWeekIndex(Double _price) throws SQLException {
-        return _price * dm.getWeekIndex();
+    public double getWeekPrice() throws SQLException {
+        return this.price * dm.getWeekIndex();
     }
 
-    public double applyWeekendIndex(Double _price) throws SQLException {
-        return _price * dm.getWeekendIndex();
+    public double getWeekendPrice() throws SQLException {
+        return this.price * dm.getWeekendIndex();
     }
 
     @Override

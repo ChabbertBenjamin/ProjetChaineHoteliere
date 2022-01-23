@@ -1,6 +1,16 @@
 package fr.ul.miage.entite;
 
+import fr.ul.miage.repository.DatabaseManager;
+
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.ZoneId;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class Reservation {
 
@@ -11,6 +21,7 @@ public class Reservation {
     private Date dateEnd;
     private double price;
     private int nbPeople;
+    DatabaseManager dm = new DatabaseManager();
 
     public Reservation(int id, int idHotel, int idRoom, Date dateStart, Date dateEnd, double price, int nbPeople) {
         this.id = id;
@@ -88,5 +99,77 @@ public class Reservation {
                 ", price=" + price +
                 ", nbPeople=" + nbPeople +
                 '}';
+    }
+
+    private boolean isDateDuringWeekend(LocalDate date) {
+        return (date.getDayOfWeek().getValue() == 6 || date.getDayOfWeek().getValue() == 7);
+    }
+
+    private boolean isDateDuringHighSeason(LocalDate date) throws SQLException {
+        int highSeasonStartMonth = dm.getHighSeasonStartMonth();
+        int highSeasonStartDay = dm.getHighSeasonStartDay();
+        int highSeasonEndMonth = dm.getHighSeasonEndMonth();
+        int highSeasonEndDay = dm.getHighSeasonEndDay();
+
+        int monthToCheck = date.getMonthValue();
+        int dayToCheck = date.getDayOfMonth();
+
+        return ((monthToCheck >= highSeasonStartMonth && monthToCheck <= highSeasonEndMonth) && (dayToCheck >= highSeasonStartDay && dayToCheck <= highSeasonEndDay));
+    }
+
+    private boolean isDateDuringLowSeason(LocalDate date) {
+        return !isDateDuringWeekend(date);
+    }
+
+    private List<LocalDate> getDatesBetween(Date startDate, Date endDate) {
+        LocalDate localDateStart = startDate.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+
+        LocalDate localDateEnd = endDate.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+
+        return localDateStart.datesUntil(localDateEnd)
+                .collect(Collectors.toList());
+    }
+
+    //Apply day by day the weekendPrice
+    private double calculatePriceBasedOnDatesCheckingWeekends() throws SQLException {
+        List<LocalDate> reservationAllDates = getDatesBetween(this.dateStart, this.dateEnd);
+        double priceBasedOnDates = 0;
+        Room room = dm.getRoomById(this.idRoom);
+
+        for (LocalDate localDate : reservationAllDates) {
+            if (isDateDuringWeekend(localDate)) {
+                priceBasedOnDates += room.getWeekendPrice();
+            } else
+            {
+                priceBasedOnDates += room.getWeekPrice();
+            }
+        }
+        return priceBasedOnDates;
+    }
+
+    //Apply day by day the seasonPrice
+    private double calculatePriceBasedOnDatesCheckingSeason() throws SQLException {
+        List<LocalDate> reservationAllDates = getDatesBetween(this.dateStart, this.dateEnd);
+        double priceBasedOnDates = 0;
+        Room room = dm.getRoomById(this.idRoom);
+
+        for (LocalDate localDate : reservationAllDates) {
+            if (isDateDuringHighSeason(localDate)) {
+                priceBasedOnDates += room.getHighSeasonPrice();
+            } else
+            {
+                priceBasedOnDates += room.getLowSeasonPrice();
+            }
+        }
+        return priceBasedOnDates;
+    }
+
+    private Date LocalDateToDate(LocalDate localDate) {
+        ZoneId defaultZoneId = ZoneId.systemDefault();
+        return Date.from(localDate.atStartOfDay(defaultZoneId).toInstant());
     }
 }
