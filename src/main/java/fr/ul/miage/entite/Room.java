@@ -10,6 +10,8 @@ public class Room {
     private Double price;
     private int nbBed;
     private int idHotel;
+    private int floorPrice;
+
     DatabaseManager dm = new DatabaseManager();
 
     public Room(int id, Double price, int nbBed, int idHotel) {
@@ -30,6 +32,10 @@ public class Room {
     public Double getPrice() {
         return price;
     }
+
+    public int getFloorPrice() {return floorPrice;}
+
+    public void setFloorPrice(int floorPrice) {this.floorPrice = floorPrice;}
 
     public void setPrice(Double price) {
         this.price = price;

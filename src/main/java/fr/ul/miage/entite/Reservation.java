@@ -4,11 +4,8 @@ import fr.ul.miage.repository.DatabaseManager;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.time.Month;
 import java.time.ZoneId;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.stream.Collectors;
 
