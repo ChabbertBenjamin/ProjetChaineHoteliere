@@ -82,7 +82,7 @@ public class DatabaseManager {
                 + "WHERE id = ?";
         ResultSet result = getResultSetForGetById(id, sql);
         while (result.next()) {
-            hotel = new Hotel(result.getInt(1), result.getString(2), result.getInt(3), result.getString(4), result.getString(5), result.getInt(6));
+            hotel = new Hotel(result.getInt(1), result.getString(2), result.getInt(3), result.getString(4), result.getString(5), result.getInt(6), result.getString(7), result.getInt(8), result.getInt(9));
         }
 
         return hotel;
@@ -123,5 +123,69 @@ public class DatabaseManager {
         stmt.setInt(1, id);
         ResultSet result = stmt.executeQuery();
         return result;
+    }
+
+    public int getMinStanding() throws SQLException {
+        String sql = "SELECT min(standing)"
+                + "FROM hotel";
+        PreparedStatement stmt = connect.prepareStatement(sql);
+        ResultSet result = stmt.executeQuery();
+        return result.getInt(1);
+    }
+
+    public int getMaxStanding() throws SQLException {
+        String sql = "SELECT max(standing)"
+                + "FROM hotel";
+        PreparedStatement stmt = connect.prepareStatement(sql);
+        ResultSet result = stmt.executeQuery();
+        return result.getInt(1);
+    }
+
+    public int getMinNbRoom() throws SQLException {
+        String sql = "SELECT min(nbroom)"
+                + "FROM hotel";
+        PreparedStatement stmt = connect.prepareStatement(sql);
+        ResultSet result = stmt.executeQuery();
+        return result.getInt(1);
+    }
+
+    public int getMaxNbRoom() throws SQLException {
+        String sql = "SELECT max(nbroom)"
+                + "FROM hotel";
+        PreparedStatement stmt = connect.prepareStatement(sql);
+        ResultSet result = stmt.executeQuery();
+        return result.getInt(1);
+    }
+
+    public int getMinNbEmployees() throws SQLException {
+        String sql = "SELECT min(nbemployees)"
+                + "FROM hotel";
+        PreparedStatement stmt = connect.prepareStatement(sql);
+        ResultSet result = stmt.executeQuery();
+        return result.getInt(1);
+    }
+
+    public int getMaxNbEmployees() throws SQLException {
+        String sql = "SELECT max(nbemployees)"
+                + "FROM hotel";
+        PreparedStatement stmt = connect.prepareStatement(sql);
+        ResultSet result = stmt.executeQuery();
+        return result.getInt(1);
+    }
+
+    public int getMinNbServices() throws SQLException {
+        String sql = "SELECT min(nbservices)"
+                + "FROM hotel";
+        PreparedStatement stmt = connect.prepareStatement(sql);
+        ResultSet result = stmt.executeQuery();
+        return result.getInt(1);
+    }
+
+    public int getMaxNbServices() throws SQLException {
+        String sql = "SELECT max(nbservices)"
+                + "FROM hotel";
+        PreparedStatement stmt = connect.prepareStatement(sql);
+        ResultSet result = stmt.executeQuery();
+        return result.getInt(1);
     }
 }
