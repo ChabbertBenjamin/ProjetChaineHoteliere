@@ -27,7 +27,7 @@ public class Hotel {
         this.nbRoom = nbRoom;
         this.nbEmployees = nbEmployees;
         this.nbServices = nbServices;
-        calculateFloorPrice();
+        //calculateFloorPrice();
     }
 
     public int getId() {
