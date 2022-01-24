@@ -10,7 +10,6 @@ public class Room {
     private Double price;
     private int nbBed;
     private int idHotel;
-    private int floorPrice;
 
     DatabaseManager dm = new DatabaseManager();
 
@@ -33,11 +32,11 @@ public class Room {
         return price;
     }
 
-    public int getFloorPrice() {return floorPrice;}
-
-    public void setFloorPrice(int floorPrice) {this.floorPrice = floorPrice;}
-
-    public void setPrice(Double price) {
+    public void setPrice(Double price) throws Exception {
+        Hotel hotel = dm.getHotelById(idHotel);
+        if (price < hotel.getFloorPrice()) {
+            throw new Exception("Le prix de la chambre doit etre supérieur au prix plancher défini par l'hotel.");
+        }
         this.price = price;
     }
 

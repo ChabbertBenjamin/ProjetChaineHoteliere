@@ -1,6 +1,8 @@
 package fr.ul.miage.entite;
 
-import java.util.ArrayList;
+import fr.ul.miage.repository.DatabaseManager;
+
+import java.sql.SQLException;
 
 public class Hotel {
 
@@ -9,15 +11,23 @@ public class Hotel {
     private int standing;
     private String city;
     private String country;
+    private double floorPrice;
+    private int nbServices;
     private int nbRoom;
+    private int nbEmployees;
 
-    public Hotel(int id, String name, int standing, String city, String country, int nbRoom) {
+    DatabaseManager dm = new DatabaseManager();
+
+    public Hotel(int id, String name, int standing, String city, String country, int nbRoom, String nameChain, int nbEmployees, int nbServices) throws SQLException {
         this.id = id;
         this.name = name;
         this.standing = standing;
         this.city = city;
         this.country = country;
         this.nbRoom = nbRoom;
+        this.nbEmployees = nbEmployees;
+        this.nbServices = nbServices;
+        calculateFloorPrice();
     }
 
     public int getId() {
@@ -40,7 +50,10 @@ public class Hotel {
         return standing;
     }
 
-    public void setStanding(int standing) {
+    public void setStanding(int standing) throws Exception {
+        if (standing > 10 || standing < 0) {
+            throw new Exception("Le standing doit être compris entre 0 et 10");
+        }
         this.standing = standing;
     }
 
@@ -68,6 +81,58 @@ public class Hotel {
         this.nbRoom = nbRoom;
     }
 
+    public double getFloorPrice() {return floorPrice;}
+
+    public void setFloorPrice(double floorPrice) {
+        this.floorPrice = floorPrice;
+    }
+
+    public int getNbServices() {
+        return nbServices;
+    }
+
+    public void setNbServices(int nbServices) {
+        this.nbServices = nbServices;
+    }
+
+    public int getNbEmployees() {
+        return nbEmployees;
+    }
+
+    public void setNbEmployees(int nbEmployees) {
+        this.nbEmployees = nbEmployees;
+    }
+
+    public double normalizeStanding() throws SQLException {
+        return (this.standing - dm.getMinStanding()) / (dm.getMaxStanding() - dm.getMinStanding());
+    }
+
+    public double normalizeNbRoom() throws SQLException {
+        return (this.nbRoom - dm.getMinNbRoom()) / (dm.getMaxNbRoom() - dm.getMinNbRoom());
+    }
+
+    public double normalizeNbEmployees() throws SQLException {
+        return (this.nbEmployees - dm.getMinNbEmployees()) / (dm.getMaxNbEmployees() - dm.getMinNbEmployees());
+    }
+
+    public double normalizeNbServices() throws SQLException {
+        return (this.nbServices - dm.getMinNbServices()) / (dm.getMaxNbServices() - dm.getMinNbServices());
+    }
+
+    public void calculateFloorPrice() throws SQLException {
+        double standingNormalized = normalizeStanding();
+        double nbRoomNormalized = normalizeNbRoom();
+        double nbEmployeesNormalized = normalizeNbEmployees();
+        double nbServicesNormalized = normalizeNbServices();
+        int basePrice = 40;
+
+        double newFloorPrice = basePrice * (standingNormalized + nbRoomNormalized + nbEmployeesNormalized + nbServicesNormalized);
+
+        setFloorPrice(newFloorPrice);
+
+    }
+
+
     @Override
     public String toString() {
         return "Hotel{" +
@@ -79,5 +144,6 @@ public class Hotel {
                 ", nbRoom=" + nbRoom +
                 '}';
     }
+
 
 }
