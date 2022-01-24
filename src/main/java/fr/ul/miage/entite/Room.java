@@ -60,6 +60,8 @@ public class Room {
         return this.price * dm.getHighSeasonIndex();
     }
 
+
+
     public double getLowSeasonPrice() throws SQLException {
         return this.price * dm.getLowSeasonIndex();
     }

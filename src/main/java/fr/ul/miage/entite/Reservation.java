@@ -131,39 +131,53 @@ public class Reservation {
                 .collect(Collectors.toList());
     }
 
-    //Apply day by day the weekendPrice
-    private double calculatePriceBasedOnDatesCheckingWeekends() throws SQLException {
+    //Apply day by day the weekendPrice and seasonPrice
+    public double calculatePriceBasedOnDates() throws SQLException {
         List<LocalDate> reservationAllDates = getDatesBetween(this.dateStart, this.dateEnd);
         double priceBasedOnDates = 0;
         Room room = dm.getRoomById(this.idRoom);
 
         for (LocalDate localDate : reservationAllDates) {
+            boolean isWeekend = isDateDuringWeekend(localDate);
+            boolean isHighSeason = isDateDuringHighSeason(localDate);
+            double weekIndex = 1;
+            double seasonIndex = 1;
+
             if (isDateDuringWeekend(localDate)) {
-                priceBasedOnDates += room.getWeekendPrice();
+                weekIndex = dm.getWeekendIndex();
             } else
             {
-                priceBasedOnDates += room.getWeekPrice();
+                weekIndex = dm.getWeekIndex();
             }
+
+            if(isDateDuringHighSeason(localDate)) {
+                seasonIndex = dm.getHighSeasonIndex();
+            } else {
+                seasonIndex = dm.getLowSeasonIndex();
+            }
+            double weekPrice = (room.getPrice() * weekIndex) - room.getPrice();
+            priceBasedOnDates += room.getPrice() * seasonIndex + weekPrice;
+
         }
         return priceBasedOnDates;
     }
 
-    //Apply day by day the seasonPrice
-    private double calculatePriceBasedOnDatesCheckingSeason() throws SQLException {
-        List<LocalDate> reservationAllDates = getDatesBetween(this.dateStart, this.dateEnd);
-        double priceBasedOnDates = 0;
-        Room room = dm.getRoomById(this.idRoom);
-
-        for (LocalDate localDate : reservationAllDates) {
-            if (isDateDuringHighSeason(localDate)) {
-                priceBasedOnDates += room.getHighSeasonPrice();
-            } else
-            {
-                priceBasedOnDates += room.getLowSeasonPrice();
-            }
-        }
-        return priceBasedOnDates;
-    }
+//    //Apply day by day the seasonPrice
+//    private double calculatePriceBasedOnDatesCheckingSeason() throws SQLException {
+//        List<LocalDate> reservationAllDates = getDatesBetween(this.dateStart, this.dateEnd);
+//        double priceBasedOnDates = 0;
+//        Room room = dm.getRoomById(this.idRoom);
+//
+//        for (LocalDate localDate : reservationAllDates) {
+//            if (isDateDuringHighSeason(localDate)) {
+//                priceBasedOnDates += room.getHighSeasonPrice();
+//            } else
+//            {
+//                priceBasedOnDates += room.getLowSeasonPrice();
+//            }
+//        }
+//        return priceBasedOnDates;
+//    }
 
     private Date LocalDateToDate(LocalDate localDate) {
         ZoneId defaultZoneId = ZoneId.systemDefault();

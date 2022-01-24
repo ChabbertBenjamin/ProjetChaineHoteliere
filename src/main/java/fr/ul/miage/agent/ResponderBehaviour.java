@@ -259,32 +259,32 @@ public class ResponderBehaviour extends Behaviour {
 
                 // On stop quand le nbBed de la combinaison actuel est inférieur aux nombre de lit demandé
                 while (nbBedInCombinaison > (int) message.get("nbPersonne")) {
-                    nbBedInCombinaison=0;
+                    nbBedInCombinaison = 0;
 
                     // créer la combinaison de k chambre grâce à la combinaison précédente
                     combinaison = createCombinaison(k, listRoom, combinaison);
                     // Si combinaison == null c'est qu'on a plus de combinaison à tester pour ce k
-                    if(combinaison == null){
+                    if (combinaison == null) {
                         break;
                     }
                     for (Room r : combinaison) {
                         nbBedInCombinaison += r.getNbBed();
                     }
                     // Si la combinaison ne fait pas perdre de lit on stop tout car on a trouvé la meilleure possible
-                    if(nbBedInCombinaison == (int) message.get("nbPersonne")){
+                    if (nbBedInCombinaison == (int) message.get("nbPersonne")) {
                         bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
-                        perfectCombinaison=true;
+                        perfectCombinaison = true;
                         break;
                     }
                     // On garde que la meilleure combinaison pour ce k
-                    if(nbBedInCombinaison > (int) message.get("nbPersonne")){
+                    if (nbBedInCombinaison > (int) message.get("nbPersonne")) {
                         bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
-                    }else{
+                    } else {
                         break;
                     }
                 }
                 //Si on a trouvé une combinaison sans perdre de lit alors on stop tout car c'est la meilleur possible
-                if(perfectCombinaison){
+                if (perfectCombinaison) {
                     break;
                 }
                 // On ajoute dans une listRoomPotentiel la meilleure combinaison trouvé pour ce k
@@ -297,12 +297,12 @@ public class ResponderBehaviour extends Behaviour {
         //System.out.println("on a trouvé les combinaisons : " + listRoomPotentiel);
 
         //Si on a pas trouvé de combinaison qui ne fait pas perdre de lit, on clear la dernière combinaison trouvé
-        if(!perfectCombinaison){
+        if (!perfectCombinaison) {
             bestCombinaison.clear();
         }
         // On regarde quelle est la meilleure combinaison (listRoomPotentiel contient la meilleur combinaison pour chaque k)
-        for (ArrayList<Room> combinaison:listRoomPotentiel) {
-            bestCombinaison = findBestCombinaison(bestCombinaison,combinaison);
+        for (ArrayList<Room> combinaison : listRoomPotentiel) {
+            bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
         }
 
         System.out.println("La meilleure combinaison de chambre est : " + bestCombinaison);
@@ -323,10 +323,18 @@ public class ResponderBehaviour extends Behaviour {
         dateFin : Date
     }
      */
-
-
-
-        double prix=0; // A calculer
+        double prix = 0;
+        for (Room roomToReserve : bestCombinaison) {
+            Reservation res = new Reservation((int) ((Math.random() * (99999999)) + 0),
+                    hotel.getId(),
+                    roomToReserve.getId(),
+                    (Date) message.get("dateDebut"),
+                    (Date) message.get("dateFin"),
+                    roomToReserve.getPrice(),
+                    (int) message.get("nbPersonne")
+            );
+            prix = res.calculatePriceBasedOnDates();
+        }
 
         //answer.put("id_proposition", 1);
         answer.put("nomHotel", hotel.getName());
@@ -335,7 +343,7 @@ public class ResponderBehaviour extends Behaviour {
         answer.put("dateFin", message.get("dateFin"));
         answer.put("nbPersonnes", message.get("nbPersonne"));
         answer.put("prix", prix);
-        answer.put("standing",hotel.getStanding());
+        answer.put("standing", hotel.getStanding());
         answer.put("ville", hotel.getCity());
         answer.put("pays", hotel.getCountry());
 
