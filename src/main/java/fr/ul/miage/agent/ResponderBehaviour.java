@@ -86,11 +86,11 @@ public class ResponderBehaviour extends Behaviour {
                 }
                 // La réponse est une confirmation ou un refus, si il n'y a pas de chambre disponible
                 JSONObject proposition = reservationMessage(message,listRoomAvailable,h,nbBedDispo);
-                proposition.put("id_proposition", counter);
+                proposition.put("idProposition", counter);
                 tmp.add(proposition);
                 counter++;
             }
-            answer.put("proposition_reservation", tmp);
+            answer.put("propositionReservation", tmp);
         }
 
         // Si c'est une reservation
@@ -323,7 +323,7 @@ public class ResponderBehaviour extends Behaviour {
             double prix=0; // A calculer
 
             //answer.put("id_proposition", 1);
-            answer.put("idHotel", hotel.getId());
+            answer.put("nomHotel", hotel.getName());
             answer.put("nbChambres", bestCombinaison.size());
             answer.put("dateDebut", message.get("dateDebut"));
             answer.put("dateFin", message.get("dateFin"));
