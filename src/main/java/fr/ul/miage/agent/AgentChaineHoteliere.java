@@ -34,11 +34,11 @@ public class AgentChaineHoteliere extends Agent {
         try {
             // Connexion à la BDD
             ConnectBDD DB = new ConnectBDD();
-            Statement stmt = DB.getConn().createStatement();
+            Statement stmt = DB.getInstance().createStatement();
             // Récupération des hotels
             ResultSet res = stmt.executeQuery("SELECT * FROM hotel");
             while(res.next()){
-                System.out.println(res.getInt(1)+"  "+res.getString(2) +"  "+res.getString(3));
+                //System.out.println(res.getInt(1)+"  "+res.getString(2) +"  "+res.getString(3));
                 Hotel h = new Hotel(res.getInt(1),res.getString(2),res.getInt(3),res.getString(4),res.getString(5),res.getInt(6));
                 listHotel.add(h);
             }

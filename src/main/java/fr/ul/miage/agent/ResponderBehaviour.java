@@ -17,6 +17,7 @@ import java.util.*;
 import java.util.Date;
 
 public class ResponderBehaviour extends Behaviour {
+    private  Connection connect = ConnectBDD.getInstance();
     private final static MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
     private final ArrayList<Hotel> listHotel;
     private int totalNbBedDispo;
@@ -100,8 +101,7 @@ public class ResponderBehaviour extends Behaviour {
         for (int i = 0; i < jsonlist.size(); i++) {
             JSONObject tmp = (JSONObject) jsonlist.get(i);
 
-            ConnectBDD DB = new ConnectBDD();
-            Statement stmt = DB.getConn().createStatement();
+            Statement stmt = connect.createStatement();
             ResultSet res = stmt.executeQuery("SELECT * FROM room WHERE id=" + tmp.get("idChambre"));
             while (res.next()) {
                 Room room = new Room(res.getInt(1), res.getDouble(2), res.getInt(3), res.getInt(4));
@@ -112,7 +112,7 @@ public class ResponderBehaviour extends Behaviour {
         return listRoom;
     }
 
-    public JSONObject rechercheHotel(ArrayList<Hotel> listHotelFound, JSONObject message) throws SQLException {
+    public JSONObject  rechercheHotel(ArrayList<Hotel> listHotelFound, JSONObject message) throws SQLException {
         JSONObject answer = new JSONObject();
         Date dateDebutDemande = (Date) message.get("dateDebut");
         Date dateFinDemande = (Date) message.get("dateFin");
@@ -120,8 +120,7 @@ public class ResponderBehaviour extends Behaviour {
         int counter = 0;
         for (Hotel h : listHotelFound) {
 
-            ConnectBDD DB = new ConnectBDD();
-            Statement stmt = DB.getConn().createStatement();
+            Statement stmt = connect.createStatement();
             ResultSet res = stmt.executeQuery("SELECT * FROM room WHERE idhotel=" + h.getId()/*+"and nbbed >=" + message.get("nbPersonne")*/);
             ArrayList<Room> listRoom = new ArrayList<>();
             while (res.next()) {
@@ -132,7 +131,7 @@ public class ResponderBehaviour extends Behaviour {
 
                 boolean chambreDisponible = true;
 
-                Statement stmt2 = DB.getConn().createStatement();
+                Statement stmt2 = connect.createStatement();
                 // Récupération des reservation par rapport aux hotels
                 ResultSet res2 = stmt2.executeQuery("SELECT * FROM reservation WHERE idroom=" + r.getId());
                 ArrayList<Reservation> listReservation = new ArrayList<>();
@@ -174,8 +173,8 @@ public class ResponderBehaviour extends Behaviour {
                     tmp.put("idChambre", r.getId());
                     tmp.put("dateDebut", dateDebutDemande);
                     tmp.put("dateFin", dateFinDemande);
-                    tmp.put("nbPersonne", message.get("nbPersonne"));
-                    tmp.put("prix", message.get("prix"));
+                    tmp.put("nbPersonne", r.getNbBed());
+                    tmp.put("prix", r.getPrice());
                     tmp.put("standing", message.get("standing"));
                     tmp.put("ville", h.getCity());
                     tmp.put("pays", h.getCountry());
@@ -312,8 +311,7 @@ public class ResponderBehaviour extends Behaviour {
             dateFin : Date
         }
          */
-            ConnectBDD DB = new ConnectBDD();
-            Statement stmt = DB.getConn().createStatement();
+            Statement stmt = connect.createStatement();
             ResultSet res = stmt.executeQuery("SELECT * FROM hotel WHERE id="+message.get("idHotel")/*+"and nbbed >=" + message.get("nbPersonne")*/);
             ArrayList<Room> listHotel = new ArrayList<>();
             Hotel hotel = null;
@@ -333,13 +331,9 @@ public class ResponderBehaviour extends Behaviour {
 
                 //System.out.println("INSERT INTO reservation VALUES ("+hotel.getId()+","+r.getId()+",'"+formater.format(dateDebutDemande)+"','"+formater.format(dateFinDemande)+"',"+r.getPrice()+","+r.getNbBed()+")");
                 String SQL_INSERT = "INSERT INTO reservation (idhotel, idroom, datestart, dateend, price, nbpeople) VALUES (?,?,?,?,?,?)";
-                try (Connection conn = DriverManager.getConnection(
-                        "jdbc:postgresql://localhost/ChaineHoteliere", "postgres", "root");
-                     PreparedStatement myStmt = conn.prepareStatement(SQL_INSERT)) {
-
+                try (PreparedStatement myStmt = connect.prepareStatement(SQL_INSERT)) {
                     //res = stmt.executeQuery("INSERT INTO reservation (idhotel, idroom, datestart, dateend, price, nbpeople) VALUES ("+hotel.getId()+","+r.getId()+",\'"+formater.format(dateDebutDemande)+"\',\'"+formater.format(dateFinDemande)+"\',"+r.getPrice()+","+r.getNbBed()+")");
                     java.sql.Date date = new java.sql.Date(0000 - 00 - 00);
-
                     myStmt.setInt(1, hotel.getId());
                     myStmt.setInt(2, r.getId());
                     myStmt.setDate(3, date.valueOf(formater.format(dateDebutDemande)));

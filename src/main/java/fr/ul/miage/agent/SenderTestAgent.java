@@ -30,6 +30,7 @@ public class SenderTestAgent extends Agent {
 
         JSONObject msgRechercheHotel = new JSONObject();
         msgRechercheHotel.put("idRequete",1);
+        msgRechercheHotel.put("dateDemande",aujourdhui);
         msgRechercheHotel.put("dateDebut",aujourdhui);
         msgRechercheHotel.put("dateFin",cal.getTime());
         msgRechercheHotel.put("prix",20.0);
@@ -39,7 +40,28 @@ public class SenderTestAgent extends Agent {
         msgRechercheHotel.put("nomChaine","Ibis");
 
 
+/*
 
+
+
+"RechercheHotel": {
+    "idRequete": "id", // identifiant de requete
+    "dateDemande": “date” //date de la demande
+    "dateDebut": "date", // date du début du séjour à l'hôtel
+    "dateFin": "date", // date de fin du séjour à l'hôtel
+    "prix": "double", // fourchette de prix
+    "nbPersonne" : "int", //nombre de personne
+    "destination": "string", // destination souhaité
+    "standing": "int", // classe souhaité (3 étoiles)
+       "nomChaine": "string", // nom de la chaine d’hôtel souhaité
+}
+
+
+"ReservationHotel": {
+      "id_processus" : "id", //identifiant du processus de la recherche
+      "id_proposition" : "int", //identifiant de la proposition de recherche
+}
+*/
 
 
 
