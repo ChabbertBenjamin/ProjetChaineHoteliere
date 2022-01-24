@@ -119,6 +119,7 @@ public class Hotel {
         return (this.nbServices - dm.getMinNbServices()) / (dm.getMaxNbServices() - dm.getMinNbServices());
     }
 
+    //Normalize and calculate floor price
     public void calculateFloorPrice() throws SQLException {
         double standingNormalized = normalizeStanding();
         double nbRoomNormalized = normalizeNbRoom();

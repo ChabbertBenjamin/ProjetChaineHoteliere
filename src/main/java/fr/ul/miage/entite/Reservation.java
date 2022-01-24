@@ -169,4 +169,16 @@ public class Reservation {
         ZoneId defaultZoneId = ZoneId.systemDefault();
         return Date.from(localDate.atStartOfDay(defaultZoneId).toInstant());
     }
+
+    public boolean isNbResaInTwoWeeksUnder60Percent() throws SQLException {
+        int nbResa = dm.getNbReservationInTwoWeeksByHotel(this.idHotel);
+        Hotel hotel = dm.getHotelById(this.idHotel);
+        return (nbResa * 100 / hotel.getNbRoom()) < 60;
+    }
+
+    public void applyLackOfReservationPromotion() throws SQLException {
+        if(isNbResaInTwoWeeksUnder60Percent()) {
+            dm.applyLackOfReservationPromotion(this.idHotel);
+        }
+    }
 }
