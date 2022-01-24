@@ -104,7 +104,12 @@ public class Hotel {
     }
 
     public double normalizeStanding() throws SQLException {
-        return (this.standing - dm.getMinStanding()) / (dm.getMaxStanding() - dm.getMinStanding());
+        try {
+            return (this.standing - dm.getMinStanding()) / (dm.getMaxStanding() - dm.getMinStanding());
+        } catch (ArithmeticException a) {
+            a.printStackTrace();
+            return -1;
+        }
     }
 
     public double normalizeNbRoom() throws SQLException {
@@ -112,11 +117,21 @@ public class Hotel {
     }
 
     public double normalizeNbEmployees() throws SQLException {
-        return (this.nbEmployees - dm.getMinNbEmployees()) / (dm.getMaxNbEmployees() - dm.getMinNbEmployees());
+        try {
+            return (this.nbEmployees - dm.getMinNbEmployees()) / (dm.getMaxNbEmployees() - dm.getMinNbEmployees());
+        } catch (ArithmeticException a) {
+            a.printStackTrace();
+            return -1;
+        }
     }
 
     public double normalizeNbServices() throws SQLException {
-        return (this.nbServices - dm.getMinNbServices()) / (dm.getMaxNbServices() - dm.getMinNbServices());
+        try {
+            return (this.nbServices - dm.getMinNbServices()) / (dm.getMaxNbServices() - dm.getMinNbServices());
+        } catch (ArithmeticException a) {
+            a.printStackTrace();
+            return -1;
+        }
     }
 
     //Normalize and calculate floor price

@@ -39,7 +39,7 @@ public class AgentChaineHoteliere extends Agent {
             ResultSet res = stmt.executeQuery("SELECT * FROM hotel");
             while(res.next()){
                 //System.out.println(res.getInt(1)+"  "+res.getString(2) +"  "+res.getString(3));
-                Hotel h = new Hotel(res.getInt(1), res.getString(2), res.getInt(3), res.getString(4), res.getString(5), res.getInt(6), res.getString(7), res.getInt(8), res.getInt(9));
+                Hotel h = new Hotel(res.getInt(1), res.getString(2), res.getInt(3), res.getString(4), res.getString(5), res.getInt(6), res.getString(7), res.getInt(8), res.getInt(10));
                 listHotel.add(h);
             }
         } catch (SQLException e) {

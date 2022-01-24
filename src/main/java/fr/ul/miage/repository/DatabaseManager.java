@@ -68,8 +68,8 @@ public class DatabaseManager {
     public Room getRoomById(int id) throws SQLException {
         Room room = null;
         String sql = "SELECT *"
-                + "FROM room"
-                + "WHERE id = ?";
+                + " FROM room"
+                + " WHERE id = ?";
         ResultSet result = getResultSetForGetById(id, sql);
         while (result.next()) {
             room = new Room(result.getInt(1), result.getDouble(2), result.getInt(3), result.getInt(4));
@@ -81,8 +81,8 @@ public class DatabaseManager {
     public Hotel getHotelById(int id) throws SQLException {
         Hotel hotel = null;
         String sql = "SELECT *"
-                + "FROM hotel"
-                + "WHERE id = ?";
+                + " FROM hotel"
+                + " WHERE id = ?";
         ResultSet result = getResultSetForGetById(id, sql);
         while (result.next()) {
             hotel = new Hotel(result.getInt(1), result.getString(2), result.getInt(3), result.getString(4), result.getString(5), result.getInt(6), result.getString(7), result.getInt(8), result.getInt(9));
@@ -93,32 +93,44 @@ public class DatabaseManager {
 
     public double getIndex(String indexName) throws SQLException {
         String sql = "SELECT my_index"
-                + "FROM my_indexes"
-                + "WHERE name = ?";
+                + " FROM my_indexes"
+                + " WHERE name = ?";
         PreparedStatement stmt = connect.prepareStatement(sql);
         stmt.setString(1, indexName);
         ResultSet result = stmt.executeQuery();
-        return result.getDouble(3);
+        double res = 0;
+        while (result.next()) {
+            res = result.getDouble(3);
+        }
+        return res;
     }
 
     public int getGlobalDataMonth(String valueName) throws SQLException {
         String sql = "SELECT my_month"
-                + "FROM global_data"
-                + "WHERE name = ?";
+                + " FROM global_data"
+                + " WHERE name = ?";
         PreparedStatement stmt = connect.prepareStatement(sql);
         stmt.setString(1, valueName);
         ResultSet result = stmt.executeQuery();
-        return result.getInt(1);
+        int res = 0;
+        while (result.next()) {
+            res = result.getInt(1);
+        }
+        return res;
     }
 
     public int getGlobalDataDay(String valueName) throws SQLException {
         String sql = "SELECT my_day"
-                + "FROM global_data"
-                + "WHERE name = ?";
+                + " FROM global_data"
+                + " WHERE name = ?";
         PreparedStatement stmt = connect.prepareStatement(sql);
         stmt.setString(1, valueName);
         ResultSet result = stmt.executeQuery();
-        return result.getInt(1);
+        int res = 0;
+        while (result.next()) {
+            res = result.getInt(1);
+        }
+        return res;
     }
 
     private ResultSet getResultSetForGetById(int id, String sql) throws SQLException {
@@ -130,66 +142,98 @@ public class DatabaseManager {
 
     public int getMinStanding() throws SQLException {
         String sql = "SELECT min(standing)"
-                + "FROM hotel";
+                + " FROM hotel";
         PreparedStatement stmt = connect.prepareStatement(sql);
         ResultSet result = stmt.executeQuery();
-        return result.getInt(1);
+        int res = -1;
+        while (result.next()) {
+            res = result.getInt(1);
+        }
+        return res;
     }
 
     public int getMaxStanding() throws SQLException {
         String sql = "SELECT max(standing)"
-                + "FROM hotel";
+                + " FROM hotel";
         PreparedStatement stmt = connect.prepareStatement(sql);
         ResultSet result = stmt.executeQuery();
-        return result.getInt(1);
+        int res = -1;
+        while (result.next()) {
+            res = result.getInt(1);
+        }
+        return res;
     }
 
     public int getMinNbRoom() throws SQLException {
         String sql = "SELECT min(nbroom)"
-                + "FROM hotel";
+                + " FROM hotel";
         PreparedStatement stmt = connect.prepareStatement(sql);
         ResultSet result = stmt.executeQuery();
-        return result.getInt(1);
+        int res = -1;
+        while (result.next()) {
+            res = result.getInt(1);
+        }
+        return res;
     }
 
     public int getMaxNbRoom() throws SQLException {
         String sql = "SELECT max(nbroom)"
-                + "FROM hotel";
+                + " FROM hotel";
         PreparedStatement stmt = connect.prepareStatement(sql);
         ResultSet result = stmt.executeQuery();
-        return result.getInt(1);
+        int res = -1;
+        while (result.next()) {
+            res = result.getInt(1);
+        }
+        return res;
     }
 
     public int getMinNbEmployees() throws SQLException {
         String sql = "SELECT min(nbemployees)"
-                + "FROM hotel";
+                + " FROM hotel";
         PreparedStatement stmt = connect.prepareStatement(sql);
         ResultSet result = stmt.executeQuery();
-        return result.getInt(1);
+        int res = -1;
+        while (result.next()) {
+            res = result.getInt(1);
+        }
+        return res;
     }
 
     public int getMaxNbEmployees() throws SQLException {
         String sql = "SELECT max(nbemployees)"
-                + "FROM hotel";
+                + " FROM hotel";
         PreparedStatement stmt = connect.prepareStatement(sql);
         ResultSet result = stmt.executeQuery();
-        return result.getInt(1);
+        int res = -1;
+        while (result.next()) {
+            res = result.getInt(1);
+        }
+        return res;
     }
 
     public int getMinNbServices() throws SQLException {
         String sql = "SELECT min(nbservices)"
-                + "FROM hotel";
+                + " FROM hotel";
         PreparedStatement stmt = connect.prepareStatement(sql);
         ResultSet result = stmt.executeQuery();
-        return result.getInt(1);
+        int res = -1;
+        while (result.next()) {
+            res = result.getInt(1);
+        }
+        return res;
     }
 
     public int getMaxNbServices() throws SQLException {
         String sql = "SELECT max(nbservices)"
-                + "FROM hotel";
+                + " FROM hotel";
         PreparedStatement stmt = connect.prepareStatement(sql);
         ResultSet result = stmt.executeQuery();
-        return result.getInt(1);
+        int res = -1;
+        while (result.next()) {
+            res = result.getInt(1);
+        }
+        return res;
     }
 
     public int getNbReservationInTwoWeeksByHotel(int idHotel) throws SQLException {
@@ -198,14 +242,18 @@ public class DatabaseManager {
         String currentDate = simpleDateFormat.format(cals.getTime());
 
         String sql = "SELECT count(id)" +
-                "FROM reservation " +
-                "WHERE datestart = ?" +
+                " FROM reservation" +
+                " WHERE datestart = ?" +
                 " and idhotel = ?";
         PreparedStatement stmt = connect.prepareStatement(sql);
         stmt.setString(1, currentDate);
         stmt.setInt(2, idHotel);
         ResultSet result = stmt.executeQuery();
-        return result.getInt(1);
+        int res = -1;
+        while (result.next()) {
+            res = result.getInt(1);
+        }
+        return res;
     }
 
     public void applyLackOfReservationPromotion(int idHotel) throws SQLException {
