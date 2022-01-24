@@ -27,7 +27,7 @@ public class Hotel {
         this.nbRoom = nbRoom;
         this.nbEmployees = nbEmployees;
         this.nbServices = nbServices;
-        //calculateFloorPrice();
+        calculateFloorPrice();
     }
 
     public int getId() {
@@ -104,33 +104,34 @@ public class Hotel {
     }
 
     public double normalizeStanding() throws SQLException {
-        try {
+        if ((dm.getMaxStanding() - dm.getMinStanding()) != 0) {
             return (this.standing - dm.getMinStanding()) / (dm.getMaxStanding() - dm.getMinStanding());
-        } catch (ArithmeticException a) {
-            a.printStackTrace();
-            return -1;
+        } else {
+            return 0;
         }
     }
 
     public double normalizeNbRoom() throws SQLException {
-        return (this.nbRoom - dm.getMinNbRoom()) / (dm.getMaxNbRoom() - dm.getMinNbRoom());
+        if (dm.getMaxNbRoom() - dm.getMinNbRoom() != 0) {
+            return (this.nbRoom - dm.getMinNbRoom()) / (dm.getMaxNbRoom() - dm.getMinNbRoom());
+        } else {
+            return 0;
+        }
     }
 
     public double normalizeNbEmployees() throws SQLException {
-        try {
+        if ((dm.getMaxNbEmployees() - dm.getMinNbEmployees() != 0)) {
             return (this.nbEmployees - dm.getMinNbEmployees()) / (dm.getMaxNbEmployees() - dm.getMinNbEmployees());
-        } catch (ArithmeticException a) {
-            a.printStackTrace();
-            return -1;
+        } else {
+            return 0;
         }
     }
 
     public double normalizeNbServices() throws SQLException {
-        try {
+        if ((dm.getMaxNbServices() - dm.getMinNbServices()) != 0) {
             return (this.nbServices - dm.getMinNbServices()) / (dm.getMaxNbServices() - dm.getMinNbServices());
-        } catch (ArithmeticException a) {
-            a.printStackTrace();
-            return -1;
+        } else {
+            return 0;
         }
     }
 
