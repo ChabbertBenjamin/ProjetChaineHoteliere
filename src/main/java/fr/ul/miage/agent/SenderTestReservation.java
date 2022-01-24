@@ -14,7 +14,7 @@ import java.util.Iterator;
 import org.json.simple.JSONObject;
 
 
-public class SenderTestAgent extends Agent {
+public class SenderTestReservation extends Agent {
 
 
     @Override
@@ -90,7 +90,7 @@ public class SenderTestAgent extends Agent {
             String out = "";
             int i = 0;
             String service = "";
-           // On cherche un agent avec le nomChaine "Ibis" (car notre objet JSON à pour nomChaine: "Ibis"
+            // On cherche un agent avec le nomChaine "Ibis" (car notre objet JSON à pour nomChaine: "Ibis"
             while ((service.compareTo(msgRechercheHotel.get("nomChaine").toString()) != 0) && (i < result.length)) {
                 DFAgentDescription desc = (DFAgentDescription) result[i];
                 Iterator iter2 = desc.getAllServices();
@@ -105,16 +105,16 @@ public class SenderTestAgent extends Agent {
                 System.out.println(aid.getName());
 
                 // On envoie le message à tous les agents trouvé
-                sendMessage(msgRechercheHotel, aid);
-                //sendMessage(msgReservationHotel, aid);
+                //sendMessage(msgRechercheHotel, aid);
+                sendMessage(msgReservationHotel, aid);
                 i++;
             }
         } catch (FIPAException fe) {
         }
 
         // L'agent test est en attente d'une réponse
-        responderTest RT = new responderTest(this);
-        this.addBehaviour(RT);
+        //responderTest RT = new responderTest(this);
+        //this.addBehaviour(RT);
 
     }
 
