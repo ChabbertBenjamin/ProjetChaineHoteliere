@@ -85,12 +85,21 @@ public class ResponderBehaviour extends Behaviour {
                     nbBedDispo += room.getNbBed();
                 }
                 // La réponse est une confirmation ou un refus, si il n'y a pas de chambre disponible
-                JSONObject proposition = reservationMessage(message,listRoomAvailable,h,nbBedDispo);
-                proposition.put("idProposition", counter);
-                tmp.add(proposition);
-                counter++;
+                if ((int) message.get("nbPersonne") < nbBedDispo) {
+                    JSONObject proposition = reservationMessage(message,listRoomAvailable,h,nbBedDispo);
+                    proposition.put("idProposition", counter);
+                    tmp.add(proposition);
+                    counter++;
+                }
             }
-            answer.put("propositionReservation", tmp);
+            // On a aucune place dans aucun hôtel
+            if(counter==0){
+                answer.put("IdRequete", message.get("idRequete"));
+                answer.put("erreur", "Aucune chambre disponible pour le nombre de personnes demandé");
+            }else{
+                answer.put("propositionReservation", tmp);
+            }
+
         }
 
         // Si c'est une reservation
@@ -199,145 +208,139 @@ public class ResponderBehaviour extends Behaviour {
         JSONObject answer = new JSONObject();
 
         // Si listRoomDispo est vide ou que l'hôtel n'a pas la capacité pour le nombre de personnes demandé, on envoie un refus
-        if ((int) message.get("nbPersonne") > nbBedDispo) {
-            answer.put("IdRequete", message.get("idRequete"));
-            answer.put("erreur", "Aucune chambre disponible pour le nombre de personnes demandé");
-        } else {
-            //Tri des chambres par rapport à leurs nombre de lit (décroissant)
-            listRoom.sort((r1, r2) -> r2.getNbBed() - r1.getNbBed());
-            System.out.println("LISTE DES CHAMBRES : " + listRoom);
-            ArrayList<Room> bestCombinaison = new ArrayList<>();
-            ArrayList<ArrayList<Room>> combinaisonDejaTest = new ArrayList();
-            // Une perfectCombinaison est une combinaison de chambre qui ne laisse aucun lit vide
-            boolean perfectCombinaison = false;
-            int idRoomInList = -1;
-            ArrayList<ArrayList<Room>> listRoomPotentiel = new ArrayList<>();
-            int bestRoomIdFromList = -1;
 
-            // On va regarder les combinaisons de chambres possible et trouver la meilleure (k = le nombre de chambre dans la combinaison)
-            for (int k = 1; k <= listRoom.size(); k++) {
-                ArrayList<Room> combinaison = new ArrayList<>();
-                combinaison.clear();
-                //Combinaison de 1 seule chambre
-                if (k == 1) {
+        //Tri des chambres par rapport à leurs nombre de lit (décroissant)
+        listRoom.sort((r1, r2) -> r2.getNbBed() - r1.getNbBed());
+        System.out.println("LISTE DES CHAMBRES : " + listRoom);
+        ArrayList<Room> bestCombinaison = new ArrayList<>();
+        ArrayList<ArrayList<Room>> combinaisonDejaTest = new ArrayList();
+        // Une perfectCombinaison est une combinaison de chambre qui ne laisse aucun lit vide
+        boolean perfectCombinaison = false;
+        int idRoomInList = -1;
+        ArrayList<ArrayList<Room>> listRoomPotentiel = new ArrayList<>();
+        int bestRoomIdFromList = -1;
+
+        // On va regarder les combinaisons de chambres possible et trouver la meilleure (k = le nombre de chambre dans la combinaison)
+        for (int k = 1; k <= listRoom.size(); k++) {
+            ArrayList<Room> combinaison = new ArrayList<>();
+            combinaison.clear();
+            //Combinaison de 1 seule chambre
+            if (k == 1) {
 
 
-                    for (int i = 0; i < listRoom.size(); i++) {
-                        if (listRoom.get(i).getNbBed() == (int) message.get("nbPersonne")) {
-                            combinaison.add(listRoom.get(i));
-                            listRoomPotentiel.add(combinaison);
-                            // On garde à chaque fois que la meilleur combinaison
-                            bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
-                            perfectCombinaison = true;
-                            break;
-                        }
-                        // Si la combinaison respecte le nombre de place demandé
-                        if (listRoom.get(i).getNbBed() > (int) message.get("nbPersonne")) {
-                            combinaison.add(listRoom.get(i));
-                            bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
-
-                        }
-                        combinaison.clear();
-                    }
-                    //Si on a trouvé une combinaison sans perdre de lit alors on stop tout car c'est la meilleur possible
-                    if (perfectCombinaison) {
+                for (int i = 0; i < listRoom.size(); i++) {
+                    if (listRoom.get(i).getNbBed() == (int) message.get("nbPersonne")) {
+                        combinaison.add(listRoom.get(i));
+                        listRoomPotentiel.add(combinaison);
+                        // On garde à chaque fois que la meilleur combinaison
+                        bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
+                        perfectCombinaison = true;
                         break;
                     }
-                    if (!combinaison.isEmpty()) {
-                        listRoomPotentiel.add(combinaison);
+                    // Si la combinaison respecte le nombre de place demandé
+                    if (listRoom.get(i).getNbBed() > (int) message.get("nbPersonne")) {
+                        combinaison.add(listRoom.get(i));
+                        bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
+
                     }
                     combinaison.clear();
-                    // Combinaison de plusieurs chambres
-                } else {
-                    int nbBedInCombinaison = 999999;
+                }
+                //Si on a trouvé une combinaison sans perdre de lit alors on stop tout car c'est la meilleur possible
+                if (perfectCombinaison) {
+                    break;
+                }
+                if (!combinaison.isEmpty()) {
+                    listRoomPotentiel.add(combinaison);
+                }
+                combinaison.clear();
+                // Combinaison de plusieurs chambres
+            } else {
+                int nbBedInCombinaison = 999999;
 
-                    // On stop quand le nbBed de la combinaison actuel est inférieur aux nombre de lit demandé
-                    while (nbBedInCombinaison > (int) message.get("nbPersonne")) {
-                        nbBedInCombinaison=0;
+                // On stop quand le nbBed de la combinaison actuel est inférieur aux nombre de lit demandé
+                while (nbBedInCombinaison > (int) message.get("nbPersonne")) {
+                    nbBedInCombinaison=0;
 
-                        // créer la combinaison de k chambre grâce à la combinaison précédente
-                        combinaison = createCombinaison(k, listRoom, combinaison);
-                        // Si combinaison == null c'est qu'on a plus de combinaison à tester pour ce k
-                        if(combinaison == null){
-                            break;
-                        }
-                        for (Room r : combinaison) {
-                            nbBedInCombinaison += r.getNbBed();
-                        }
-                        // Si la combinaison ne fait pas perdre de lit on stop tout car on a trouvé la meilleure possible
-                        if(nbBedInCombinaison == (int) message.get("nbPersonne")){
-                            bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
-                            perfectCombinaison=true;
-                            break;
-                        }
-                        // On garde que la meilleure combinaison pour ce k
-                        if(nbBedInCombinaison > (int) message.get("nbPersonne")){
-                            bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
-                        }else{
-                            break;
-                        }
-                    }
-                    //Si on a trouvé une combinaison sans perdre de lit alors on stop tout car c'est la meilleur possible
-                    if(perfectCombinaison){
+                    // créer la combinaison de k chambre grâce à la combinaison précédente
+                    combinaison = createCombinaison(k, listRoom, combinaison);
+                    // Si combinaison == null c'est qu'on a plus de combinaison à tester pour ce k
+                    if(combinaison == null){
                         break;
                     }
-                    // On ajoute dans une listRoomPotentiel la meilleure combinaison trouvé pour ce k
-                    ArrayList<Room> result = new ArrayList<>(bestCombinaison);
-                    listRoomPotentiel.add(result);
-                    bestCombinaison.clear();
+                    for (Room r : combinaison) {
+                        nbBedInCombinaison += r.getNbBed();
+                    }
+                    // Si la combinaison ne fait pas perdre de lit on stop tout car on a trouvé la meilleure possible
+                    if(nbBedInCombinaison == (int) message.get("nbPersonne")){
+                        bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
+                        perfectCombinaison=true;
+                        break;
+                    }
+                    // On garde que la meilleure combinaison pour ce k
+                    if(nbBedInCombinaison > (int) message.get("nbPersonne")){
+                        bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
+                    }else{
+                        break;
+                    }
                 }
-            }
-
-            //System.out.println("on a trouvé les combinaisons : " + listRoomPotentiel);
-
-            //Si on a pas trouvé de combinaison qui ne fait pas perdre de lit, on clear la dernière combinaison trouvé
-            if(!perfectCombinaison){
+                //Si on a trouvé une combinaison sans perdre de lit alors on stop tout car c'est la meilleur possible
+                if(perfectCombinaison){
+                    break;
+                }
+                // On ajoute dans une listRoomPotentiel la meilleure combinaison trouvé pour ce k
+                ArrayList<Room> result = new ArrayList<>(bestCombinaison);
+                listRoomPotentiel.add(result);
                 bestCombinaison.clear();
             }
-            // On regarde quelle est la meilleure combinaison (listRoomPotentiel contient la meilleur combinaison pour chaque k)
-            for (ArrayList<Room> combinaison:listRoomPotentiel) {
-                bestCombinaison = findBestCombinaison(bestCombinaison,combinaison);
-            }
-
-            System.out.println("La meilleure combinaison de chambre est : " + bestCombinaison);
-
-
-              /*
-        RENVOYER CONFIRMATION RESERVATION
-        {
-            idReservation : id
-            idHotel : id
-            nbChambres : int
-            ville : string
-            pays : string
-            nbPersonnes : int
-            prix : Double
-            standing : int
-            dateDebut : Date
-            dateFin : Date
         }
-         */
 
+        //System.out.println("on a trouvé les combinaisons : " + listRoomPotentiel);
 
-
-            double prix=0; // A calculer
-
-            //answer.put("id_proposition", 1);
-            answer.put("nomHotel", hotel.getName());
-            answer.put("nbChambres", bestCombinaison.size());
-            answer.put("dateDebut", message.get("dateDebut"));
-            answer.put("dateFin", message.get("dateFin"));
-            answer.put("nbPersonnes", message.get("nbPersonne"));
-            answer.put("prix", prix);
-            answer.put("standing",hotel.getStanding());
-            answer.put("ville", hotel.getCity());
-            answer.put("pays", hotel.getCountry());
-
-            //  A verifier
-            //registerReservation(bestCombinaison,message);
-
-
+        //Si on a pas trouvé de combinaison qui ne fait pas perdre de lit, on clear la dernière combinaison trouvé
+        if(!perfectCombinaison){
+            bestCombinaison.clear();
         }
+        // On regarde quelle est la meilleure combinaison (listRoomPotentiel contient la meilleur combinaison pour chaque k)
+        for (ArrayList<Room> combinaison:listRoomPotentiel) {
+            bestCombinaison = findBestCombinaison(bestCombinaison,combinaison);
+        }
+
+        System.out.println("La meilleure combinaison de chambre est : " + bestCombinaison);
+
+
+          /*
+    RENVOYER CONFIRMATION RESERVATION
+    {
+        idReservation : id
+        idHotel : id
+        nbChambres : int
+        ville : string
+        pays : string
+        nbPersonnes : int
+        prix : Double
+        standing : int
+        dateDebut : Date
+        dateFin : Date
+    }
+     */
+
+
+
+        double prix=0; // A calculer
+
+        //answer.put("id_proposition", 1);
+        answer.put("nomHotel", hotel.getName());
+        answer.put("nbChambres", bestCombinaison.size());
+        answer.put("dateDebut", message.get("dateDebut"));
+        answer.put("dateFin", message.get("dateFin"));
+        answer.put("nbPersonnes", message.get("nbPersonne"));
+        answer.put("prix", prix);
+        answer.put("standing",hotel.getStanding());
+        answer.put("ville", hotel.getCity());
+        answer.put("pays", hotel.getCountry());
+
+        //  A verifier
+        //registerReservation(bestCombinaison,message);
         return answer;
     }
 
