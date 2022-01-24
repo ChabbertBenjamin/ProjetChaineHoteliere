@@ -5,8 +5,11 @@ import fr.ul.miage.entite.Room;
 import fr.ul.miage.model.ConnectBDD;
 
 import java.sql.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.Month;
+import java.util.Calendar;
 
 public class DatabaseManager {
 
@@ -187,5 +190,30 @@ public class DatabaseManager {
         PreparedStatement stmt = connect.prepareStatement(sql);
         ResultSet result = stmt.executeQuery();
         return result.getInt(1);
+    }
+
+    public int getNbReservationInTwoWeeksByHotel(int idHotel) throws SQLException {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar cals = Calendar.getInstance();
+        String currentDate = simpleDateFormat.format(cals.getTime());
+
+        String sql = "SELECT count(id)" +
+                "FROM reservation " +
+                "WHERE datestart = ?" +
+                " and idhotel = ?";
+        PreparedStatement stmt = connect.prepareStatement(sql);
+        stmt.setString(1, currentDate);
+        stmt.setInt(2, idHotel);
+        ResultSet result = stmt.executeQuery();
+        return result.getInt(1);
+    }
+
+    public void applyLackOfReservationPromotion(int idHotel) throws SQLException {
+        String sql = "UPDATE reservation" +
+                " SET price = price * 0.8" +
+                " WHERE idhotel = ?";
+        PreparedStatement stmt = connect.prepareStatement(sql);
+        stmt.setInt(1, idHotel);
+        stmt.executeQuery();
     }
 }
