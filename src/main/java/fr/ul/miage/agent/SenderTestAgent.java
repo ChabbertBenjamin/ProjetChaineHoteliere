@@ -34,7 +34,7 @@ public class SenderTestAgent extends Agent {
         msgRechercheHotel.put("dateDebut",aujourdhui);
         msgRechercheHotel.put("dateFin",cal.getTime());
         msgRechercheHotel.put("prix",20.0);
-        msgRechercheHotel.put("nbPersonne",2);
+        msgRechercheHotel.put("nbPersonne",7);
         msgRechercheHotel.put("destination","Nancy");
         msgRechercheHotel.put("standing","3 étoiles");
         msgRechercheHotel.put("nomChaine","Ibis");
@@ -107,8 +107,8 @@ public class SenderTestAgent extends Agent {
                 System.out.println(aid.getName());
 
                 // On envoie le message à tous les agents trouvé
-                //sendMessage(msgRechercheHotel, aid);
-                sendMessage(msgReservationHotel, aid);
+                sendMessage(msgRechercheHotel, aid);
+                //sendMessage(msgReservationHotel, aid);
                 i++;
             }
         } catch (FIPAException fe) {

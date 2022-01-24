@@ -11,7 +11,6 @@ import jade.lang.acl.MessageTemplate;
 import org.json.simple.JSONObject;
 
 import java.sql.*;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
@@ -21,6 +20,7 @@ public class ResponderBehaviour extends Behaviour {
     private final static MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
     private final ArrayList<Hotel> listHotel;
     private int totalNbBedDispo;
+    private JSONObject result;
 
     public ResponderBehaviour(AgentChaineHoteliere agentChaineHoteliere) {
         super(agentChaineHoteliere);
@@ -67,32 +67,42 @@ public class ResponderBehaviour extends Behaviour {
 
     public JSONObject processMessage(JSONObject message, String msgType) throws SQLException {
         JSONObject answer = new JSONObject();
-        // Si c'est une réservation, on cherche l'hotel en fonction de l'id de l'hôtel dans le message
-        if (msgType.equals("reservation")) {
-            ArrayList<Hotel> listHotelFound = new ArrayList<>();
-            for (Hotel h : listHotel) {
-                if (message.get("idHotel").equals(h.getId())) {
-                    listHotelFound.add(h);
-                }
-            }
-            JSONObject resultRecherche = rechercheHotel(listHotelFound, message);
-
-            System.out.println("Résultat de la recherche : " + resultRecherche.toString());
-            // La réponse est une confirmation ou un refus, si il n'y a pas de chambre disponible
-            answer = reservationMessage(message, jsonToList(resultRecherche));
-        }
-        // Si c'est une recherche, on cherche les hotels en fonction de la destination
+        // Si c'est une recherche
         if (msgType.equals("recherche")) {
-            //trouver les hotels qui correspondent au message
-            ArrayList<Hotel> listHotelFound = new ArrayList<>();
-            for (Hotel h : listHotel) {
-                if (h.getCity().equals(message.get("destination"))) {
-                    listHotelFound.add(h);
+            //Boucle sur chaque hotel
+            int counter =0;
+            ArrayList<JSONObject> tmp = new ArrayList<>();
+            answer.put("idRequete", message.get("idRequete"));
+            for (Hotel h:listHotel) {
+                //JSONObject tmp = new JSONObject();
+                // ResultRecherche sur un seul hotel
+                JSONObject resultRecherche = rechercheRoomAvailable(h, message);
+                System.out.println("Résultat de la recherche : " + resultRecherche.toString());
+
+                ArrayList<Room> listRoomAvailable= jsonToList(resultRecherche);
+                int nbBedDispo=0;
+                for (Room room:listRoomAvailable) {
+                    nbBedDispo += room.getNbBed();
                 }
+                // La réponse est une confirmation ou un refus, si il n'y a pas de chambre disponible
+                JSONObject proposition = reservationMessage(message,listRoomAvailable,h,nbBedDispo);
+                proposition.put("id_proposition", counter);
+                tmp.add(proposition);
+                counter++;
             }
-            answer = rechercheHotel(listHotelFound, message);
+            answer.put("proposition_reservation", tmp);
         }
-        // answer contient soit les chambres disponible soit une confirmation de reservation ou un refus suivant si la chambre est dispobible
+
+        // Si c'est une reservation
+        if (msgType.equals("reservation")) {
+            //trouver les hotels qui correspondent au message
+
+            //answer = rechercheHotel(listHotelFound, message);
+        }
+
+        // On sauvegarde la dernière recherche
+        result =answer;
+        System.out.println("RESULT : " + result);
         return answer;
     }
 
@@ -112,94 +122,90 @@ public class ResponderBehaviour extends Behaviour {
         return listRoom;
     }
 
-    public JSONObject  rechercheHotel(ArrayList<Hotel> listHotelFound, JSONObject message) throws SQLException {
+    public JSONObject rechercheRoomAvailable(Hotel h, JSONObject message) throws SQLException {
         JSONObject answer = new JSONObject();
         Date dateDebutDemande = (Date) message.get("dateDebut");
         Date dateFinDemande = (Date) message.get("dateFin");
 
-        int counter = 0;
-        for (Hotel h : listHotelFound) {
-
-            Statement stmt = connect.createStatement();
-            ResultSet res = stmt.executeQuery("SELECT * FROM room WHERE idhotel=" + h.getId()/*+"and nbbed >=" + message.get("nbPersonne")*/);
-            ArrayList<Room> listRoom = new ArrayList<>();
-            while (res.next()) {
-                Room room = new Room(res.getInt(1), res.getDouble(2), res.getInt(3), res.getInt(4));
-                listRoom.add(room);
-            }
-            for (Room r : listRoom) {
-
-                boolean chambreDisponible = true;
-
-                Statement stmt2 = connect.createStatement();
-                // Récupération des reservation par rapport aux hotels
-                ResultSet res2 = stmt2.executeQuery("SELECT * FROM reservation WHERE idroom=" + r.getId());
-                ArrayList<Reservation> listReservation = new ArrayList<>();
-                while (res2.next()) {
-                    Reservation reservation = new Reservation(res2.getInt(1), res2.getInt(2), res2.getInt(3), res2.getDate(4), res2.getDate(5), res2.getDouble(6), res2.getInt(7));
-                    listReservation.add(reservation);
-                }
-
-                for (Reservation reservation : listReservation) {
-                    Date dateDebutReservationTrouve = reservation.getDateStart();
-                    Date dateFinReservationTrouve = reservation.getDateEnd();
-
-                     /*
-                    Savoir si une chambre est libre : lorsqu'on trouve une reservation déjà présente on check :
-                        - SI dateDebut de la reservation est entre dateDebutDemande et dateFinDemande
-                    ET  - SI dateFin de la reservation est entre dateDebutDemande et dateFinDemande
-                    ET  - SI dateDebut de la demande est entre dateDebut de la reservation et dateFin de la reservation
-                    ET  - SI dateFin de la demande est entre dateDebut de la reservation et dateFin de la reservation
-                     */
-                    if (dateDebutReservationTrouve.after(dateDebutDemande) && dateDebutReservationTrouve.before(dateFinDemande)) {
-                        chambreDisponible = false;
-                    }
-                    if (dateFinReservationTrouve.after(dateDebutDemande) && dateFinReservationTrouve.before(dateFinDemande)) {
-                        chambreDisponible = false;
-                    }
-                    if (dateDebutDemande.after(dateDebutReservationTrouve) && dateDebutDemande.before(dateFinReservationTrouve)) {
-                        chambreDisponible = false;
-                    }
-                    if (dateFinDemande.after(dateDebutReservationTrouve) && dateFinDemande.before(dateFinReservationTrouve)) {
-                        chambreDisponible = false;
-                    }
-
-                }
-                if (chambreDisponible) {
-                    this.totalNbBedDispo += r.getNbBed();
-                    // Si on trouve une chambre disponible alors on créer un objet JSON correspondant à cette chambre pour la réponse
-                    JSONObject tmp = new JSONObject();
-                    tmp.put("idHotel", h.getId());
-                    tmp.put("idChambre", r.getId());
-                    tmp.put("dateDebut", dateDebutDemande);
-                    tmp.put("dateFin", dateFinDemande);
-                    tmp.put("nbPersonne", r.getNbBed());
-                    tmp.put("prix", r.getPrice());
-                    tmp.put("standing", message.get("standing"));
-                    tmp.put("ville", h.getCity());
-                    tmp.put("pays", h.getCountry());
-
-                    answer.put(counter, tmp);
-                    counter++;
-                }
-            }
-
-            //System.out.println("liste des chambres disponible pour l'hotel : "+ h.getId() + " : " +listRoom.toString());
-
+        Statement stmt = connect.createStatement();
+        ResultSet res = stmt.executeQuery("SELECT * FROM room WHERE idhotel=" + h.getId()/*+"and nbbed >=" + message.get("nbPersonne")*/);
+        ArrayList<Room> listRoom = new ArrayList<>();
+        while (res.next()) {
+            Room room = new Room(res.getInt(1), res.getDouble(2), res.getInt(3), res.getInt(4));
+            listRoom.add(room);
         }
+        int counter = 0;
+        for (Room r : listRoom) {
+
+            boolean chambreDisponible = true;
+
+            Statement stmt2 = connect.createStatement();
+            // Récupération des reservation par rapport aux hotels
+            ResultSet res2 = stmt2.executeQuery("SELECT * FROM reservation WHERE idroom=" + r.getId());
+            ArrayList<Reservation> listReservation = new ArrayList<>();
+            while (res2.next()) {
+                Reservation reservation = new Reservation(res2.getInt(1), res2.getInt(2), res2.getInt(3), res2.getDate(4), res2.getDate(5), res2.getDouble(6), res2.getInt(7));
+                listReservation.add(reservation);
+            }
+
+            for (Reservation reservation : listReservation) {
+                Date dateDebutReservationTrouve = reservation.getDateStart();
+                Date dateFinReservationTrouve = reservation.getDateEnd();
+
+                 /*
+                Savoir si une chambre est libre : lorsqu'on trouve une reservation déjà présente on check :
+                    - SI dateDebut de la reservation est entre dateDebutDemande et dateFinDemande
+                ET  - SI dateFin de la reservation est entre dateDebutDemande et dateFinDemande
+                ET  - SI dateDebut de la demande est entre dateDebut de la reservation et dateFin de la reservation
+                ET  - SI dateFin de la demande est entre dateDebut de la reservation et dateFin de la reservation
+                 */
+                if (dateDebutReservationTrouve.after(dateDebutDemande) && dateDebutReservationTrouve.before(dateFinDemande)) {
+                    chambreDisponible = false;
+                }
+                if (dateFinReservationTrouve.after(dateDebutDemande) && dateFinReservationTrouve.before(dateFinDemande)) {
+                    chambreDisponible = false;
+                }
+                if (dateDebutDemande.after(dateDebutReservationTrouve) && dateDebutDemande.before(dateFinReservationTrouve)) {
+                    chambreDisponible = false;
+                }
+                if (dateFinDemande.after(dateDebutReservationTrouve) && dateFinDemande.before(dateFinReservationTrouve)) {
+                    chambreDisponible = false;
+                }
+
+            }
+            if (chambreDisponible) {
+                this.totalNbBedDispo += r.getNbBed();
+                // Si on trouve une chambre disponible alors on créer un objet JSON correspondant à cette chambre pour la réponse
+                JSONObject tmp = new JSONObject();
+                tmp.put("idHotel", h.getId());
+                tmp.put("idChambre", r.getId());
+                tmp.put("dateDebut", dateDebutDemande);
+                tmp.put("dateFin", dateFinDemande);
+                tmp.put("nbPersonne", r.getNbBed());
+                tmp.put("prix", r.getPrice());
+                tmp.put("standing", message.get("standing"));
+                tmp.put("ville", h.getCity());
+                tmp.put("pays", h.getCountry());
+
+                answer.put(counter, tmp);
+                counter++;
+            }
+        }
+        //System.out.println("liste des chambres disponible pour l'hotel : "+ h.getId() + " : " +listRoom.toString());
         return answer;
     }
 
-    public JSONObject reservationMessage(JSONObject message, ArrayList<Room> listRoom) throws SQLException {
+    public JSONObject reservationMessage(JSONObject message, ArrayList<Room> listRoom, Hotel hotel, int nbBedDispo) throws SQLException {
         JSONObject answer = new JSONObject();
 
         // Si listRoomDispo est vide ou que l'hôtel n'a pas la capacité pour le nombre de personnes demandé, on envoie un refus
-        if ((int) message.get("nbPersonne") > this.totalNbBedDispo) {
+        if ((int) message.get("nbPersonne") > nbBedDispo) {
             answer.put("IdRequete", message.get("idRequete"));
             answer.put("erreur", "Aucune chambre disponible pour le nombre de personnes demandé");
         } else {
             //Tri des chambres par rapport à leurs nombre de lit (décroissant)
             listRoom.sort((r1, r2) -> r2.getNbBed() - r1.getNbBed());
+            System.out.println("LISTE DES CHAMBRES : " + listRoom);
             ArrayList<Room> bestCombinaison = new ArrayList<>();
             ArrayList<ArrayList<Room>> combinaisonDejaTest = new ArrayList();
             // Une perfectCombinaison est une combinaison de chambre qui ne laisse aucun lit vide
@@ -311,64 +317,70 @@ public class ResponderBehaviour extends Behaviour {
             dateFin : Date
         }
          */
-            Statement stmt = connect.createStatement();
-            ResultSet res = stmt.executeQuery("SELECT * FROM hotel WHERE id="+message.get("idHotel")/*+"and nbbed >=" + message.get("nbPersonne")*/);
-            ArrayList<Room> listHotel = new ArrayList<>();
-            Hotel hotel = null;
-            while (res.next()) {
-                hotel = new Hotel(res.getInt(1), res.getString(2), res.getInt(3), res.getString(4),res.getString(5),res.getInt(6));
-            }
-
-            double prix=0;
-
-            SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd");
-
-
-            Date dateDebutDemande = (Date) message.get("dateDebut");
-            Date dateFinDemande = (Date) message.get("dateFin");
-            for (Room r:bestCombinaison) {
-                prix += r.getPrice();
-
-                //System.out.println("INSERT INTO reservation VALUES ("+hotel.getId()+","+r.getId()+",'"+formater.format(dateDebutDemande)+"','"+formater.format(dateFinDemande)+"',"+r.getPrice()+","+r.getNbBed()+")");
-                String SQL_INSERT = "INSERT INTO reservation (idhotel, idroom, datestart, dateend, price, nbpeople) VALUES (?,?,?,?,?,?)";
-                try (PreparedStatement myStmt = connect.prepareStatement(SQL_INSERT)) {
-                    //res = stmt.executeQuery("INSERT INTO reservation (idhotel, idroom, datestart, dateend, price, nbpeople) VALUES ("+hotel.getId()+","+r.getId()+",\'"+formater.format(dateDebutDemande)+"\',\'"+formater.format(dateFinDemande)+"\',"+r.getPrice()+","+r.getNbBed()+")");
-                    java.sql.Date date = new java.sql.Date(0000 - 00 - 00);
-                    myStmt.setInt(1, hotel.getId());
-                    myStmt.setInt(2, r.getId());
-                    myStmt.setDate(3, date.valueOf(formater.format(dateDebutDemande)));
-                    myStmt.setDate(4, date.valueOf(formater.format(dateFinDemande)));
-                    myStmt.setDouble(5, r.getPrice());
-                    myStmt.setInt(6, r.getNbBed());
-
-                    int row = myStmt.executeUpdate();
-                    // rows affected
-                    System.out.println(row); //1
-                } catch (SQLException e) {
-                    System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
 
 
 
+            double prix=0; // A calculer
 
-
-            answer.put("idReservation", 1);
-            answer.put("idHotel", message.get("idHotel"));
+            //answer.put("id_proposition", 1);
+            answer.put("idHotel", hotel.getId());
             answer.put("nbChambres", bestCombinaison.size());
-            answer.put("ville", hotel.getCity());
-            answer.put("pays", hotel.getCountry());
-            answer.put("nbPersonnes", message.get("nbPersonne"));
-            answer.put("prix", prix);
             answer.put("dateDebut", message.get("dateDebut"));
             answer.put("dateFin", message.get("dateFin"));
+            answer.put("nbPersonnes", message.get("nbPersonne"));
+            answer.put("prix", prix);
+            answer.put("standing",hotel.getStanding());
+            answer.put("ville", hotel.getCity());
+            answer.put("pays", hotel.getCountry());
+
+            //  A verifier
+            //registerReservation(bestCombinaison,message);
 
 
         }
         return answer;
     }
+
+    public void registerReservation(ArrayList<Room> bestCombinaison, JSONObject message) throws SQLException {
+        SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd");
+
+        Date dateDebutDemande = (Date) message.get("dateDebut");
+        Date dateFinDemande = (Date) message.get("dateFin");
+        Statement stmt = connect.createStatement();
+        ResultSet res = stmt.executeQuery("SELECT * FROM hotel WHERE id="+message.get("idHotel")/*+"and nbbed >=" + message.get("nbPersonne")*/);
+        ArrayList<Room> listHotel = new ArrayList<>();
+        Hotel hotel = null;
+        while (res.next()) {
+            hotel = new Hotel(res.getInt(1), res.getString(2), res.getInt(3), res.getString(4),res.getString(5),res.getInt(6));
+        }
+
+        double prix=0;
+        for (Room r:bestCombinaison) {
+            prix += r.getPrice();
+
+            //System.out.println("INSERT INTO reservation VALUES ("+hotel.getId()+","+r.getId()+",'"+formater.format(dateDebutDemande)+"','"+formater.format(dateFinDemande)+"',"+r.getPrice()+","+r.getNbBed()+")");
+            String SQL_INSERT = "INSERT INTO reservation (idhotel, idroom, datestart, dateend, price, nbpeople) VALUES (?,?,?,?,?,?)";
+            try (PreparedStatement myStmt = connect.prepareStatement(SQL_INSERT)) {
+                //res = stmt.executeQuery("INSERT INTO reservation (idhotel, idroom, datestart, dateend, price, nbpeople) VALUES ("+hotel.getId()+","+r.getId()+",\'"+formater.format(dateDebutDemande)+"\',\'"+formater.format(dateFinDemande)+"\',"+r.getPrice()+","+r.getNbBed()+")");
+                java.sql.Date date = new java.sql.Date(0000 - 00 - 00);
+                myStmt.setInt(1, hotel.getId());
+                myStmt.setInt(2, r.getId());
+                myStmt.setDate(3, date.valueOf(formater.format(dateDebutDemande)));
+                myStmt.setDate(4, date.valueOf(formater.format(dateFinDemande)));
+                myStmt.setDouble(5, r.getPrice());
+                myStmt.setInt(6, r.getNbBed());
+
+                int row = myStmt.executeUpdate();
+                // rows affected
+                System.out.println(row); //1
+            } catch (SQLException e) {
+                System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 
     public ArrayList<Room> createCombinaison(int tailleCombinaison, ArrayList<Room> listRoom, ArrayList<Room> previousCombinaison) {
         // S'il n'y a pas de combinaison précédente, on créer la première dans l'ordre
