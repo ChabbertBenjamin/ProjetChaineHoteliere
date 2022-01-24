@@ -347,11 +347,11 @@ public class ResponderBehaviour extends Behaviour {
         Date dateDebutDemande = (Date) message.get("dateDebut");
         Date dateFinDemande = (Date) message.get("dateFin");
         Statement stmt = connect.createStatement();
-        ResultSet res = stmt.executeQuery("SELECT * FROM hotel WHERE id="+message.get("idHotel")/*+"and nbbed >=" + message.get("nbPersonne")*/);
+        ResultSet res = stmt.executeQuery("SELECT * FROM hotel WHERE id=" + message.get("idHotel")/*+"and nbbed >=" + message.get("nbPersonne")*/);
         ArrayList<Room> listHotel = new ArrayList<>();
         Hotel hotel = null;
         while (res.next()) {
-            hotel = new Hotel(res.getInt(1), res.getString(2), res.getInt(3), res.getString(4), res.getString(5), res.getInt(6), res.getString(7), res.getInt(8),res.getInt(9));
+            hotel = new Hotel(res.getInt(1), res.getString(2), res.getInt(3), res.getString(4), res.getString(5), res.getInt(6), res.getString(7), res.getInt(8), res.getInt(9));
         }
 
         double prix=0;
