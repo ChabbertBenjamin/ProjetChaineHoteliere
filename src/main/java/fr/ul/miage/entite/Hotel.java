@@ -146,7 +146,6 @@ public class Hotel {
         double newFloorPrice = basePrice * (standingNormalized + nbRoomNormalized + nbEmployeesNormalized + nbServicesNormalized);
 
         setFloorPrice(newFloorPrice);
-
     }
 
 
