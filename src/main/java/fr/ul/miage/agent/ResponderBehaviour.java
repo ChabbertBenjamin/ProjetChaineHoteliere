@@ -136,8 +136,6 @@ public class ResponderBehaviour extends Behaviour {
 
             idProcessusListCombinaison.put(idProcessus,this.listCombinaison);
             idProcessusResultRecherche.put(idProcessus,answer);
-            System.out.println("ici : " + idProcessus);
-            System.out.println("la : " + idProcessusResultRecherche.get(idProcessus));
             //resultRecherche =answer;
             return answer;
         }else{
@@ -164,7 +162,7 @@ public class ResponderBehaviour extends Behaviour {
                 ArrayList<Room> bestCombinaison = new ArrayList<>();
                 bestCombinaison = listCombinaison.get(idProposition);
                 // Enregistrer la reservation
-                //registerReservation(bestCombinaison, propositionChoisi);
+                registerReservation(bestCombinaison, propositionChoisi);
 
 
                 answer.put("idProposition",message.get("idProposition"));
@@ -179,11 +177,11 @@ public class ResponderBehaviour extends Behaviour {
                 answer.put("dateFin",propositionChoisi.get("dateFin"));
 
 
-                idProcessusResultRecherche.remove(idProcessus);
-                idProcessusListCombinaison.remove(idProcessus);
+                idProcessusResultRecherche.clear();
+                idProcessusListCombinaison.clear();
 
             }
-            System.out.println(answer);
+
             return answer;
         }
 
