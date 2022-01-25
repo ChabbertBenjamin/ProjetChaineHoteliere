@@ -15,13 +15,17 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
 
+import static java.lang.Thread.sleep;
+
 public class ResponderBehaviour extends Behaviour {
     private  Connection connect = ConnectBDD.getInstance();
     private final static MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
     private final ArrayList<Hotel> listHotel;
     private int totalNbBedDispo;
-    private JSONObject result = new JSONObject();
     private ArrayList<ArrayList<Room>> listCombinaison;
+    private int idProcessus = 0;
+    private HashMap<Integer, ArrayList<ArrayList<Room>>> idProcessusListCombinaison = new HashMap<>();
+    private HashMap<Integer,JSONObject> idProcessusResultRecherche = new HashMap<>();
 
     public ResponderBehaviour(AgentChaineHoteliere agentChaineHoteliere) {
         super(agentChaineHoteliere);
@@ -32,9 +36,34 @@ public class ResponderBehaviour extends Behaviour {
 
     @Override
     public void action() {
+        int time=0;
+        int counter=0;
         while (true) {
             ACLMessage aclMessage = myAgent.receive(mt);
+            try {
+                sleep(1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            time++;
+            // Si ça fait 10 minutes que la recherche n'a pas été faite
+            if(time == 1000*60*10 ){
+                idProcessusListCombinaison.clear();
+                idProcessusResultRecherche.clear();
+                time=0;
+                System.out.println("ancienne reserche supprimé");
+            }
+
+            if(time%10000==0){
+                counter+=10;
+                System.out.println(counter +" secondes");
+            }
+
+
+            // Supprimer les anciennes reservations au bout de 10min // A FAIRE
             if (aclMessage != null) {
+                time=0;
+                counter=0;
                 try {
                     JSONObject msg = (JSONObject) aclMessage.getContentObject();
 
@@ -63,6 +92,7 @@ public class ResponderBehaviour extends Behaviour {
         if (message.get("idProposition") != null) {
             return "reservation";
         } else {
+            this.idProcessus++;
             return "recherche";
         }
     }
@@ -75,6 +105,7 @@ public class ResponderBehaviour extends Behaviour {
             int counter =0;
             ArrayList<JSONObject> tmp = new ArrayList<>();
             answer.put("idRequete", message.get("idRequete"));
+            answer.put("idProcessus", this.idProcessus);
             for (Hotel h:listHotel) {
                 //JSONObject tmp = new JSONObject();
                 // ResultRecherche sur un seul hotel
@@ -102,24 +133,39 @@ public class ResponderBehaviour extends Behaviour {
                 answer.put("propositionReservation", tmp);
             }
 
-            result =answer;
+
+            idProcessusListCombinaison.put(idProcessus,this.listCombinaison);
+            idProcessusResultRecherche.put(idProcessus,answer);
+            System.out.println("ici : " + idProcessus);
+            System.out.println("la : " + idProcessusResultRecherche.get(idProcessus));
+            //resultRecherche =answer;
             return answer;
         }else{
             // Si c'est une reservation
-            if(result.get("propositionReservation")==null){
+            int idProcessus = (int) message.get("idProcessus");
+            System.out.println(idProcessus);
+
+            int idProposition = (int) message.get("idProposition");
+            System.out.println(idProcessusResultRecherche.get(idProcessus));
+            if(idProcessusResultRecherche.get(idProcessus) == null){
                 // Si aucune reserche n'a été faites
-                answer.put("idProposition",message.get("idProposition"));
+                answer.put("idProposition",idProposition);
                 answer.put("erreur","Faites une reserche avant une reservation");
             }else{
-                ArrayList<JSONObject> listProposition = new ArrayList<>();
-                listProposition = (ArrayList<JSONObject>) result.get("propositionReservation");
-                JSONObject propositionChoisi = listProposition.get((Integer) message.get("idProposition"));
-                System.out.println("CHOISI : " + propositionChoisi);
+                JSONObject resultRecherche = idProcessusResultRecherche.get(idProcessus);
+                ArrayList<JSONObject> listProposition = (ArrayList<JSONObject>) resultRecherche.get("propositionReservation");
+                JSONObject propositionChoisi = listProposition.get(idProposition);
+                ArrayList<ArrayList<Room>> listCombinaison = idProcessusListCombinaison.get(idProcessus);
+                //ArrayList<JSONObject> listProposition = new ArrayList<>();
+                //listProposition = (ArrayList<JSONObject>) resultRecherche.get("propositionReservation");
+                //JSONObject propositionChoisi = listProposition.get((Integer) message.get("idProposition"));
+                //System.out.println("CHOISI : " + propositionChoisi);
 
                 ArrayList<Room> bestCombinaison = new ArrayList<>();
-                bestCombinaison = listCombinaison.get((Integer) message.get("idProposition"));
+                bestCombinaison = listCombinaison.get(idProposition);
                 // Enregistrer la reservation
-                registerReservation(bestCombinaison, propositionChoisi);
+                //registerReservation(bestCombinaison, propositionChoisi);
+
 
                 answer.put("idProposition",message.get("idProposition"));
                 answer.put("nomHotel",propositionChoisi.get("nomHotel"));
@@ -131,8 +177,13 @@ public class ResponderBehaviour extends Behaviour {
                 answer.put("standing",propositionChoisi.get("standing"));
                 answer.put("dateDebut",propositionChoisi.get("dateDebut"));
                 answer.put("dateFin",propositionChoisi.get("dateFin"));
-            }
 
+
+                idProcessusResultRecherche.remove(idProcessus);
+                idProcessusListCombinaison.remove(idProcessus);
+
+            }
+            System.out.println(answer);
             return answer;
         }
 
@@ -330,6 +381,9 @@ public class ResponderBehaviour extends Behaviour {
 
         System.out.println("La meilleure combinaison de chambre est : " + bestCombinaison);
         this.listCombinaison.add(bestCombinaison);
+
+
+
 
           /*
     RENVOYER CONFIRMATION RESERVATION

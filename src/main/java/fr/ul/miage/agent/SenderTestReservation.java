@@ -72,7 +72,7 @@ public class SenderTestReservation extends Agent {
         cal2.add(Calendar.DAY_OF_MONTH, 1);
 
         JSONObject msgReservationHotel = new JSONObject();
-        msgReservationHotel.put("idProcessus",0);
+        msgReservationHotel.put("idProcessus",1);
         msgReservationHotel.put("idProposition",0);
 
 
