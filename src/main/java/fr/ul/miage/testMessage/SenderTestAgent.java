@@ -1,4 +1,4 @@
-package fr.ul.miage.agent;
+package fr.ul.miage.testMessage;
 
 import jade.core.AID;
 import jade.core.Agent;
@@ -14,14 +14,11 @@ import java.util.Iterator;
 import org.json.simple.JSONObject;
 
 
-public class SenderTestReservation extends Agent {
+public class SenderTestAgent extends Agent {
 
 
     @Override
     protected void setup() {
-
-
-
         // Création d'un objet JSON test similaire à ceux que notre agent doit recevoir avec le projet final
         Date aujourdhui = new Date();
         Calendar cal = Calendar.getInstance();
@@ -72,7 +69,7 @@ public class SenderTestReservation extends Agent {
         cal2.add(Calendar.DAY_OF_MONTH, 1);
 
         JSONObject msgReservationHotel = new JSONObject();
-        msgReservationHotel.put("idProcessus",1);
+        msgReservationHotel.put("idProcessus",0);
         msgReservationHotel.put("idProposition",0);
 
 
@@ -90,7 +87,7 @@ public class SenderTestReservation extends Agent {
             String out = "";
             int i = 0;
             String service = "";
-            // On cherche un agent avec le nomChaine "Ibis" (car notre objet JSON à pour nomChaine: "Ibis"
+           // On cherche un agent avec le nomChaine "Ibis" (car notre objet JSON à pour nomChaine: "Ibis"
             while ((service.compareTo(msgRechercheHotel.get("nomChaine").toString()) != 0) && (i < result.length)) {
                 DFAgentDescription desc = (DFAgentDescription) result[i];
                 Iterator iter2 = desc.getAllServices();
@@ -105,16 +102,16 @@ public class SenderTestReservation extends Agent {
                 System.out.println(aid.getName());
 
                 // On envoie le message à tous les agents trouvé
-                //sendMessage(msgRechercheHotel, aid);
-                sendMessage(msgReservationHotel, aid);
+                sendMessage(msgRechercheHotel, aid);
+                //sendMessage(msgReservationHotel, aid);
                 i++;
             }
         } catch (FIPAException fe) {
         }
 
         // L'agent test est en attente d'une réponse
-        //responderTest RT = new responderTest(this);
-        //this.addBehaviour(RT);
+        responderTest RT = new responderTest(this);
+        this.addBehaviour(RT);
 
     }
 

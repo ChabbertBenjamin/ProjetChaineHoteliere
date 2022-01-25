@@ -21,7 +21,8 @@ public class ResponderBehaviour extends Behaviour {
     private  Connection connect = ConnectBDD.getInstance();
     private final static MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
     private final ArrayList<Hotel> listHotel;
-    private int totalNbBedDispo;
+
+    //Permet l'historique des anciennes recherches
     private ArrayList<ArrayList<Room>> listCombinaison;
     private int idProcessus = 0;
     private HashMap<Integer, ArrayList<ArrayList<Room>>> idProcessusListCombinaison = new HashMap<>();
@@ -30,14 +31,12 @@ public class ResponderBehaviour extends Behaviour {
     public ResponderBehaviour(AgentChaineHoteliere agentChaineHoteliere) {
         super(agentChaineHoteliere);
         this.listHotel = agentChaineHoteliere.getListHotel();
-        this.totalNbBedDispo = 0;
         this.listCombinaison = new ArrayList<>();
     }
 
     @Override
     public void action() {
         int time=0;
-        int counter=0;
         while (true) {
             ACLMessage aclMessage = myAgent.receive(mt);
             try {
@@ -51,23 +50,13 @@ public class ResponderBehaviour extends Behaviour {
                 idProcessusListCombinaison.clear();
                 idProcessusResultRecherche.clear();
                 time=0;
-                System.out.println("ancienne reserche supprimé");
+                //System.out.println("ancienne reserche supprimé");
             }
 
-            if(time%10000==0){
-                counter+=10;
-                System.out.println(counter +" secondes");
-            }
-
-
-            // Supprimer les anciennes reservations au bout de 10min // A FAIRE
             if (aclMessage != null) {
                 time=0;
-                counter=0;
                 try {
                     JSONObject msg = (JSONObject) aclMessage.getContentObject();
-
-
                     System.out.println(myAgent.getLocalName() + ": I receive a message with content\n" + msg.toString());
                     String msgType = getTypeMessage(msg);
                     //System.out.println(msgType);
@@ -92,6 +81,7 @@ public class ResponderBehaviour extends Behaviour {
         if (message.get("idProposition") != null) {
             return "reservation";
         } else {
+            // On augmente le l'idProcessus de 1 qui correspond à la nouvelle recherche
             this.idProcessus++;
             return "recherche";
         }
@@ -101,23 +91,19 @@ public class ResponderBehaviour extends Behaviour {
         JSONObject answer = new JSONObject();
         // Si c'est une recherche
         if (msgType.equals("recherche")) {
-            //Boucle sur chaque hotel
             int counter =0;
             ArrayList<JSONObject> tmp = new ArrayList<>();
             answer.put("idRequete", message.get("idRequete"));
             answer.put("idProcessus", this.idProcessus);
+            //Boucle sur chaque hotel
             for (Hotel h:listHotel) {
-                //JSONObject tmp = new JSONObject();
-                // ResultRecherche sur un seul hotel
-                JSONObject resultRecherche = rechercheRoomAvailable(h, message);
-                System.out.println("Résultat de la recherche : " + resultRecherche.toString());
-
-                ArrayList<Room> listRoomAvailable= jsonToList(resultRecherche);
+                // On cherche les chambres disponible dans l'hotel
+                ArrayList<Room> listRoomAvailable = rechercheRoomAvailable(h, message);
                 int nbBedDispo=0;
                 for (Room room:listRoomAvailable) {
                     nbBedDispo += room.getNbBed();
                 }
-                // La réponse est une confirmation ou un refus, si il n'y a pas de chambre disponible
+                // La réponse est une confirmation ou un refus s'l n'y a pas assez de lits disponibles
                 if ((int) message.get("nbPersonne") < nbBedDispo) {
                     JSONObject proposition = reservationMessage(message,listRoomAvailable,h,nbBedDispo);
                     proposition.put("idProposition", counter);
@@ -131,20 +117,14 @@ public class ResponderBehaviour extends Behaviour {
                 answer.put("erreur", "Aucune chambre disponible pour le nombre de personnes demandé");
             }else{
                 answer.put("propositionReservation", tmp);
+                idProcessusListCombinaison.put(idProcessus,this.listCombinaison);
+                idProcessusResultRecherche.put(idProcessus,answer);
             }
-
-
-            idProcessusListCombinaison.put(idProcessus,this.listCombinaison);
-            idProcessusResultRecherche.put(idProcessus,answer);
-            //resultRecherche =answer;
             return answer;
         }else{
             // Si c'est une reservation
             int idProcessus = (int) message.get("idProcessus");
-            System.out.println(idProcessus);
-
             int idProposition = (int) message.get("idProposition");
-            System.out.println(idProcessusResultRecherche.get(idProcessus));
             if(idProcessusResultRecherche.get(idProcessus) == null){
                 // Si aucune reserche n'a été faites
                 answer.put("idProposition",idProposition);
@@ -154,11 +134,6 @@ public class ResponderBehaviour extends Behaviour {
                 ArrayList<JSONObject> listProposition = (ArrayList<JSONObject>) resultRecherche.get("propositionReservation");
                 JSONObject propositionChoisi = listProposition.get(idProposition);
                 ArrayList<ArrayList<Room>> listCombinaison = idProcessusListCombinaison.get(idProcessus);
-                //ArrayList<JSONObject> listProposition = new ArrayList<>();
-                //listProposition = (ArrayList<JSONObject>) resultRecherche.get("propositionReservation");
-                //JSONObject propositionChoisi = listProposition.get((Integer) message.get("idProposition"));
-                //System.out.println("CHOISI : " + propositionChoisi);
-
                 ArrayList<Room> bestCombinaison = new ArrayList<>();
                 bestCombinaison = listCombinaison.get(idProposition);
                 // Enregistrer la reservation
@@ -182,32 +157,16 @@ public class ResponderBehaviour extends Behaviour {
 
             }
 
+            System.out.println(answer);
             return answer;
         }
 
     }
 
-    public ArrayList<Room> jsonToList(JSONObject jsonlist) throws SQLException {
-        ArrayList<Room> listRoom = new ArrayList<>();
-        for (int i = 0; i < jsonlist.size(); i++) {
-            JSONObject tmp = (JSONObject) jsonlist.get(i);
-
-            Statement stmt = connect.createStatement();
-            ResultSet res = stmt.executeQuery("SELECT * FROM room WHERE id=" + tmp.get("idChambre"));
-            while (res.next()) {
-                Room room = new Room(res.getInt(1), res.getDouble(2), res.getInt(3), res.getInt(4));
-                listRoom.add(room);
-            }
-        }
-
-        return listRoom;
-    }
-
-    public JSONObject rechercheRoomAvailable(Hotel h, JSONObject message) throws SQLException {
-        JSONObject answer = new JSONObject();
+    public ArrayList<Room> rechercheRoomAvailable(Hotel h, JSONObject message) throws SQLException {
+        ArrayList<Room> answer = new ArrayList<Room>();
         Date dateDebutDemande = (Date) message.get("dateDebut");
         Date dateFinDemande = (Date) message.get("dateFin");
-
         Statement stmt = connect.createStatement();
         ResultSet res = stmt.executeQuery("SELECT * FROM room WHERE idhotel=" + h.getId()/*+"and nbbed >=" + message.get("nbPersonne")*/);
         ArrayList<Room> listRoom = new ArrayList<>();
@@ -215,11 +174,8 @@ public class ResponderBehaviour extends Behaviour {
             Room room = new Room(res.getInt(1), res.getDouble(2), res.getInt(3), res.getInt(4));
             listRoom.add(room);
         }
-        int counter = 0;
         for (Room r : listRoom) {
-
             boolean chambreDisponible = true;
-
             Statement stmt2 = connect.createStatement();
             // Récupération des reservation par rapport aux hotels
             ResultSet res2 = stmt2.executeQuery("SELECT * FROM reservation WHERE idroom=" + r.getId());
@@ -228,11 +184,9 @@ public class ResponderBehaviour extends Behaviour {
                 Reservation reservation = new Reservation(res2.getInt(1), res2.getInt(2), res2.getInt(3), res2.getDate(4), res2.getDate(5), res2.getDouble(6), res2.getInt(7));
                 listReservation.add(reservation);
             }
-
             for (Reservation reservation : listReservation) {
                 Date dateDebutReservationTrouve = reservation.getDateStart();
                 Date dateFinReservationTrouve = reservation.getDateEnd();
-
                  /*
                 Savoir si une chambre est libre : lorsqu'on trouve une reservation déjà présente on check :
                     - SI dateDebut de la reservation est entre dateDebutDemande et dateFinDemande
@@ -252,60 +206,42 @@ public class ResponderBehaviour extends Behaviour {
                 if (dateFinDemande.after(dateDebutReservationTrouve) && dateFinDemande.before(dateFinReservationTrouve)) {
                     chambreDisponible = false;
                 }
-
             }
             if (chambreDisponible) {
-                this.totalNbBedDispo += r.getNbBed();
-                // Si on trouve une chambre disponible alors on créer un objet JSON correspondant à cette chambre pour la réponse
-                JSONObject tmp = new JSONObject();
-                tmp.put("idHotel", h.getId());
-                tmp.put("idChambre", r.getId());
-                tmp.put("dateDebut", dateDebutDemande);
-                tmp.put("dateFin", dateFinDemande);
-                tmp.put("nbPersonne", r.getNbBed());
-                tmp.put("prix", r.getPrice());
-                tmp.put("standing", message.get("standing"));
-                tmp.put("ville", h.getCity());
-                tmp.put("pays", h.getCountry());
-
-                answer.put(counter, tmp);
-                counter++;
+                answer.add(r);
             }
         }
-        //System.out.println("liste des chambres disponible pour l'hotel : "+ h.getId() + " : " +listRoom.toString());
+        //System.out.println("liste des chambres disponible pour l'hotel : "+ h.getId() + " : " +answer);
         return answer;
     }
 
     public JSONObject reservationMessage(JSONObject message, ArrayList<Room> listRoom, Hotel hotel, int nbBedDispo) throws SQLException {
         JSONObject answer = new JSONObject();
-
-        // Si listRoomDispo est vide ou que l'hôtel n'a pas la capacité pour le nombre de personnes demandé, on envoie un refus
-
-        //Tri des chambres par rapport à leurs nombre de lit (décroissant)
+        //Tri des chambres par rapport à leurs nombre de lit (décroissant) pour stoper l'algorithme dès qu'on trouve une combinaison parfaite
         listRoom.sort((r1, r2) -> r2.getNbBed() - r1.getNbBed());
-        System.out.println("LISTE DES CHAMBRES : " + listRoom);
         ArrayList<Room> bestCombinaison = new ArrayList<>();
-        ArrayList<ArrayList<Room>> combinaisonDejaTest = new ArrayList();
         // Une perfectCombinaison est une combinaison de chambre qui ne laisse aucun lit vide
         boolean perfectCombinaison = false;
         int idRoomInList = -1;
+        // Contiendra la meilleur combinaison pour chaque k (taille de combinaison)
         ArrayList<ArrayList<Room>> listRoomPotentiel = new ArrayList<>();
         int bestRoomIdFromList = -1;
 
         // On va regarder les combinaisons de chambres possible et trouver la meilleure (k = le nombre de chambre dans la combinaison)
         for (int k = 1; k <= listRoom.size(); k++) {
+            // La combinaison qui est actuellement testé
             ArrayList<Room> combinaison = new ArrayList<>();
             combinaison.clear();
             //Combinaison de 1 seule chambre
             if (k == 1) {
-
-
                 for (int i = 0; i < listRoom.size(); i++) {
+                    // Si on trouve une chambre qui correspond exactement au nombre de personnes demandées
                     if (listRoom.get(i).getNbBed() == (int) message.get("nbPersonne")) {
-                        combinaison.add(listRoom.get(i));
+                        bestCombinaison.add(listRoom.get(i));
+                        /*
                         listRoomPotentiel.add(combinaison);
                         // On garde à chaque fois que la meilleur combinaison
-                        bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
+                        bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);*/
                         perfectCombinaison = true;
                         break;
                     }
@@ -313,7 +249,6 @@ public class ResponderBehaviour extends Behaviour {
                     if (listRoom.get(i).getNbBed() > (int) message.get("nbPersonne")) {
                         combinaison.add(listRoom.get(i));
                         bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
-
                     }
                     combinaison.clear();
                 }
@@ -327,12 +262,11 @@ public class ResponderBehaviour extends Behaviour {
                 combinaison.clear();
                 // Combinaison de plusieurs chambres
             } else {
-                int nbBedInCombinaison = 999999;
+                int nbBedInCombinaison = Integer.MAX_VALUE;
 
-                // On stop quand le nbBed de la combinaison actuel est inférieur aux nombre de lit demandé
-                while (nbBedInCombinaison > (int) message.get("nbPersonne")) {
+                // On stop quand le nbBed de la combinaison actuel est inférieur aux nombre de lit demandé ou qu'on a testé toutes les combinaisons
+                while (nbBedInCombinaison > (int) message.get("nbPersonne") || combinaison!=null) {
                     nbBedInCombinaison=0;
-
                     // créer la combinaison de k chambre grâce à la combinaison précédente
                     combinaison = createCombinaison(k, listRoom, combinaison);
                     // Si combinaison == null c'est qu'on a plus de combinaison à tester pour ce k
@@ -352,6 +286,7 @@ public class ResponderBehaviour extends Behaviour {
                     if(nbBedInCombinaison > (int) message.get("nbPersonne")){
                         bestCombinaison = findBestCombinaison(bestCombinaison, combinaison);
                     }else{
+                        // Si le nombre de lit suffit pas, alors toutes les combinaisons pour ce même k ne suffiront pas
                         break;
                     }
                 }
@@ -366,8 +301,6 @@ public class ResponderBehaviour extends Behaviour {
             }
         }
 
-        //System.out.println("on a trouvé les combinaisons : " + listRoomPotentiel);
-
         //Si on a pas trouvé de combinaison qui ne fait pas perdre de lit, on clear la dernière combinaison trouvé
         if(!perfectCombinaison){
             bestCombinaison.clear();
@@ -376,30 +309,11 @@ public class ResponderBehaviour extends Behaviour {
         for (ArrayList<Room> combinaison:listRoomPotentiel) {
             bestCombinaison = findBestCombinaison(bestCombinaison,combinaison);
         }
-
-        System.out.println("La meilleure combinaison de chambre est : " + bestCombinaison);
+        //System.out.println("La meilleure combinaison de chambre est : " + bestCombinaison);
         this.listCombinaison.add(bestCombinaison);
 
 
-
-
-          /*
-    RENVOYER CONFIRMATION RESERVATION
-    {
-        idReservation : id
-        idHotel : id
-        nbChambres : int
-        ville : string
-        pays : string
-        nbPersonnes : int
-        prix : Double
-        standing : int
-        dateDebut : Date
-        dateFin : Date
-    }
-     */
-
-
+        // ON RENVOIT LA PROPOSITION AVEC SON PRIX
 
         double prix = 0;
         for (Room roomToReserve : bestCombinaison) {
@@ -413,8 +327,6 @@ public class ResponderBehaviour extends Behaviour {
             );
             prix += res.calculatePriceBasedOnDates();
         }
-
-        //answer.put("id_proposition", 1);
         answer.put("nomHotel", hotel.getName());
         answer.put("nbChambres", bestCombinaison.size());
         answer.put("dateDebut", message.get("dateDebut"));
@@ -425,8 +337,6 @@ public class ResponderBehaviour extends Behaviour {
         answer.put("ville", hotel.getCity());
         answer.put("pays", hotel.getCountry());
 
-        //  A verifier
-        //registerReservation(bestCombinaison,message);
         return answer;
     }
 
@@ -443,25 +353,33 @@ public class ResponderBehaviour extends Behaviour {
             hotel = new Hotel(res.getInt(1), res.getString(2), res.getInt(3), res.getString(4), res.getString(5), res.getInt(6), res.getString(7), res.getInt(8), res.getInt(9));
         }
 
-        double prix=0;
-        for (Room r:bestCombinaison) {
-            prix += r.getPrice();
+        double prix = 0;
 
-            //System.out.println("INSERT INTO reservation VALUES ("+hotel.getId()+","+r.getId()+",'"+formater.format(dateDebutDemande)+"','"+formater.format(dateFinDemande)+"',"+r.getPrice()+","+r.getNbBed()+")");
+        for (Room roomToReserve:bestCombinaison) {
+
+            Reservation resa = new Reservation((int) ((Math.random() * (99999999)) + 0),
+                    hotel.getId(),
+                    roomToReserve.getId(),
+                    (Date) message.get("dateDebut"),
+                    (Date) message.get("dateFin"),
+                    roomToReserve.getPrice(),
+                    roomToReserve.getNbBed()
+            );
+            prix = resa.calculatePriceBasedOnDates();
+
             String SQL_INSERT = "INSERT INTO reservation (idhotel, idroom, datestart, dateend, price, nbpeople) VALUES (?,?,?,?,?,?)";
             try (PreparedStatement myStmt = connect.prepareStatement(SQL_INSERT)) {
-                //res = stmt.executeQuery("INSERT INTO reservation (idhotel, idroom, datestart, dateend, price, nbpeople) VALUES ("+hotel.getId()+","+r.getId()+",\'"+formater.format(dateDebutDemande)+"\',\'"+formater.format(dateFinDemande)+"\',"+r.getPrice()+","+r.getNbBed()+")");
                 java.sql.Date date = new java.sql.Date(0000 - 00 - 00);
                 myStmt.setInt(1, hotel.getId());
-                myStmt.setInt(2, r.getId());
+                myStmt.setInt(2, roomToReserve.getId());
                 myStmt.setDate(3, date.valueOf(formater.format(dateDebutDemande)));
                 myStmt.setDate(4, date.valueOf(formater.format(dateFinDemande)));
-                myStmt.setDouble(5, r.getPrice());
-                myStmt.setInt(6, r.getNbBed());
+                myStmt.setDouble(5, prix);
+                myStmt.setInt(6, roomToReserve.getNbBed());
 
                 int row = myStmt.executeUpdate();
                 // rows affected
-                System.out.println(row); //1
+                //System.out.println(row); //1
             } catch (SQLException e) {
                 System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
             } catch (Exception e) {
@@ -496,6 +414,7 @@ public class ResponderBehaviour extends Behaviour {
             // Si l'index1 ne peut pas changer
             if(index >= listRoom.size()-(tailleCombinaison-1)+i){
                 if(i==-1){
+                    //Si on est sur la dernière combinaison alors on retourne null car on a fini
                     return null;
                 }
                 Room room = previousCombinaison.get(i);
@@ -550,9 +469,6 @@ public class ResponderBehaviour extends Behaviour {
                 answer.addAll(combinaison2);
             }
         }
-
-
-
         return answer;
 
     }

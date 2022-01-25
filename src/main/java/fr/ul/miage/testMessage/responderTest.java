@@ -1,4 +1,4 @@
-package fr.ul.miage.agent;
+package fr.ul.miage.testMessage;
 
 
 import jade.core.behaviours.Behaviour;
