@@ -100,7 +100,7 @@ public class DatabaseManager {
         ResultSet result = stmt.executeQuery();
         double res = 0;
         while (result.next()) {
-            res = result.getDouble(3);
+            res = result.getDouble(1);
         }
         return res;
     }

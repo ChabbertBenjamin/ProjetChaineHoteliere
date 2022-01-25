@@ -60,7 +60,7 @@ public class ResponderBehaviour extends Behaviour {
     }
 
     public String getTypeMessage(JSONObject message) {
-        if (message.get("idHotel") != null) {
+        if (message.get("idProposition") != null) {
             return "reservation";
         } else {
             return "recherche";
@@ -102,19 +102,35 @@ public class ResponderBehaviour extends Behaviour {
                 answer.put("propositionReservation", tmp);
             }
 
+            result =answer;
+            return answer;
+        }else{
+            // Si c'est une reservation
+            ArrayList<JSONObject> listProposition = new ArrayList<>();
+            listProposition = (ArrayList<JSONObject>) result.get("propositionReservation");
+            JSONObject propositionChoisi = listProposition.get((Integer) message.get("idProposition"));
+            System.out.println("CHOISI : " + propositionChoisi);
+
+            ArrayList<Room> bestCombinaison = new ArrayList<>();
+            bestCombinaison = listCombinaison.get((Integer) message.get("idProposition"));
+            // Enregistrer la reservation
+            registerReservation(bestCombinaison, propositionChoisi);
+
+
+            answer.put("idProposition",message.get("idProposition"));
+            answer.put("nomHotel",propositionChoisi.get("nomHotel"));
+            answer.put("nbChambres",propositionChoisi.get("nbChambres"));
+            answer.put("ville",propositionChoisi.get("ville"));
+            answer.put("pays",propositionChoisi.get("pays"));
+            answer.put("nbPersonnes",propositionChoisi.get("nbPersonnes"));
+            answer.put("prix",propositionChoisi.get("prix"));
+            answer.put("standing",propositionChoisi.get("standing"));
+            answer.put("dateDebut",propositionChoisi.get("dateDebut"));
+            answer.put("dateFin",propositionChoisi.get("dateFin"));
+
+            return answer;
         }
 
-        // Si c'est une reservation
-        if (msgType.equals("reservation")) {
-            //trouver les hotels qui correspondent au message
-
-            //answer = rechercheHotel(listHotelFound, message);
-        }
-
-        // On sauvegarde la dernière recherche
-        result =answer;
-        System.out.println("RESULT : " + result);
-        return answer;
     }
 
     public ArrayList<Room> jsonToList(JSONObject jsonlist) throws SQLException {
@@ -328,19 +344,7 @@ public class ResponderBehaviour extends Behaviour {
 
 
 
-
-        double prix = 0;
-        for (Room roomToReserve : bestCombinaison) {
-            Reservation res = new Reservation((int) ((Math.random() * (99999999)) + 0),
-                    hotel.getId(),
-                    roomToReserve.getId(),
-                    (Date) message.get("dateDebut"),
-                    (Date) message.get("dateFin"),
-                    roomToReserve.getPrice(),
-                    (int) message.get("nbPersonne")
-            );
-            prix = res.calculatePriceBasedOnDates();
-        }
+        double prix=0; // A calculer
 
         //answer.put("id_proposition", 1);
         answer.put("nomHotel", hotel.getName());
@@ -364,7 +368,7 @@ public class ResponderBehaviour extends Behaviour {
         Date dateDebutDemande = (Date) message.get("dateDebut");
         Date dateFinDemande = (Date) message.get("dateFin");
         Statement stmt = connect.createStatement();
-        ResultSet res = stmt.executeQuery("SELECT * FROM hotel WHERE id=" + message.get("idHotel")/*+"and nbbed >=" + message.get("nbPersonne")*/);
+        ResultSet res = stmt.executeQuery("SELECT * FROM hotel WHERE namehotel='" + message.get("nomHotel")+"'");
         ArrayList<Room> listHotel = new ArrayList<>();
         Hotel hotel = null;
         while (res.next()) {
