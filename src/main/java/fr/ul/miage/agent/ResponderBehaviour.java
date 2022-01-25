@@ -344,7 +344,18 @@ public class ResponderBehaviour extends Behaviour {
 
 
 
-        double prix=0; // A calculer
+        double prix = 0;
+        for (Room roomToReserve : bestCombinaison) {
+            Reservation res = new Reservation((int) ((Math.random() * (99999999)) + 0),
+                    hotel.getId(),
+                    roomToReserve.getId(),
+                    (Date) message.get("dateDebut"),
+                    (Date) message.get("dateFin"),
+                    roomToReserve.getPrice(),
+                    (int) message.get("nbPersonne")
+            );
+            prix = res.calculatePriceBasedOnDates();
+        }
 
         //answer.put("id_proposition", 1);
         answer.put("nomHotel", hotel.getName());
