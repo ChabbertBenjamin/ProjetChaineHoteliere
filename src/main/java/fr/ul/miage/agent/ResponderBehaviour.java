@@ -20,7 +20,7 @@ public class ResponderBehaviour extends Behaviour {
     private final static MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
     private final ArrayList<Hotel> listHotel;
     private int totalNbBedDispo;
-    private JSONObject result;
+    private JSONObject result = new JSONObject();
     private ArrayList<ArrayList<Room>> listCombinaison;
 
     public ResponderBehaviour(AgentChaineHoteliere agentChaineHoteliere) {
@@ -106,27 +106,32 @@ public class ResponderBehaviour extends Behaviour {
             return answer;
         }else{
             // Si c'est une reservation
-            ArrayList<JSONObject> listProposition = new ArrayList<>();
-            listProposition = (ArrayList<JSONObject>) result.get("propositionReservation");
-            JSONObject propositionChoisi = listProposition.get((Integer) message.get("idProposition"));
-            System.out.println("CHOISI : " + propositionChoisi);
+            if(result.get("propositionReservation")==null){
+                // Si aucune reserche n'a été faites
+                answer.put("idProposition",message.get("idProposition"));
+                answer.put("erreur","Faites une reserche avant une reservation");
+            }else{
+                ArrayList<JSONObject> listProposition = new ArrayList<>();
+                listProposition = (ArrayList<JSONObject>) result.get("propositionReservation");
+                JSONObject propositionChoisi = listProposition.get((Integer) message.get("idProposition"));
+                System.out.println("CHOISI : " + propositionChoisi);
 
-            ArrayList<Room> bestCombinaison = new ArrayList<>();
-            bestCombinaison = listCombinaison.get((Integer) message.get("idProposition"));
-            // Enregistrer la reservation
-            registerReservation(bestCombinaison, propositionChoisi);
+                ArrayList<Room> bestCombinaison = new ArrayList<>();
+                bestCombinaison = listCombinaison.get((Integer) message.get("idProposition"));
+                // Enregistrer la reservation
+                registerReservation(bestCombinaison, propositionChoisi);
 
-
-            answer.put("idProposition",message.get("idProposition"));
-            answer.put("nomHotel",propositionChoisi.get("nomHotel"));
-            answer.put("nbChambres",propositionChoisi.get("nbChambres"));
-            answer.put("ville",propositionChoisi.get("ville"));
-            answer.put("pays",propositionChoisi.get("pays"));
-            answer.put("nbPersonnes",propositionChoisi.get("nbPersonnes"));
-            answer.put("prix",propositionChoisi.get("prix"));
-            answer.put("standing",propositionChoisi.get("standing"));
-            answer.put("dateDebut",propositionChoisi.get("dateDebut"));
-            answer.put("dateFin",propositionChoisi.get("dateFin"));
+                answer.put("idProposition",message.get("idProposition"));
+                answer.put("nomHotel",propositionChoisi.get("nomHotel"));
+                answer.put("nbChambres",propositionChoisi.get("nbChambres"));
+                answer.put("ville",propositionChoisi.get("ville"));
+                answer.put("pays",propositionChoisi.get("pays"));
+                answer.put("nbPersonnes",propositionChoisi.get("nbPersonnes"));
+                answer.put("prix",propositionChoisi.get("prix"));
+                answer.put("standing",propositionChoisi.get("standing"));
+                answer.put("dateDebut",propositionChoisi.get("dateDebut"));
+                answer.put("dateFin",propositionChoisi.get("dateFin"));
+            }
 
             return answer;
         }

@@ -19,9 +19,6 @@ public class SenderTestAgent extends Agent {
 
     @Override
     protected void setup() {
-
-
-
         // Création d'un objet JSON test similaire à ceux que notre agent doit recevoir avec le projet final
         Date aujourdhui = new Date();
         Calendar cal = Calendar.getInstance();
