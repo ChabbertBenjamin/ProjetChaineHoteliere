@@ -354,7 +354,7 @@ public class ResponderBehaviour extends Behaviour {
                     roomToReserve.getPrice(),
                     (int) message.get("nbPersonne")
             );
-            prix = res.calculatePriceBasedOnDates();
+            prix += res.calculatePriceBasedOnDates();
         }
 
         //answer.put("id_proposition", 1);
