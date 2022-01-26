@@ -153,7 +153,7 @@ public class ResponderBehaviour extends Behaviour {
             if(idProcessusResultRecherche.get(idProcessus) == null){
                 // Si aucune reserche n'a été faites
                 answer.put("idProposition",idProposition);
-                answer.put("erreur","Faites une reserche avant une reservation");
+                answer.put("erreur","Faites une recherche avant une reservation");
             }else{
                 JSONObject resultRecherche = idProcessusResultRecherche.get(idProcessus);
                 ArrayList<JSONObject> listProposition = (ArrayList<JSONObject>) resultRecherche.get("propositionReservation");
