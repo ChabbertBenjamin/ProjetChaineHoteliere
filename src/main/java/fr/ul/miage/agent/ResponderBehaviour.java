@@ -97,7 +97,6 @@ public class ResponderBehaviour extends Behaviour {
         } else {
             // On augmente le l'idProcessus de 1 qui correspond à la nouvelle recherche
             this.idProcessus = BigInteger.valueOf(System.currentTimeMillis());
-            System.out.println("id de la recherche : " + idProcessus);
             return "recherche";
         }
     }
