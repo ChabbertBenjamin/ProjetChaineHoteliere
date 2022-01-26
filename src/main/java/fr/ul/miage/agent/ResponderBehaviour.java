@@ -394,7 +394,7 @@ public class ResponderBehaviour extends Behaviour {
         }
         // Si les concurents non pas de place on augmente de 15% les prix
         if(!concurentPlace){
-            prix = prix * dm.getNoConcurrentIndex();
+            prix *= dm.getNoConcurrentIndex();
         }
 
         //Appliquer réduction pour réservation à l'avance : à partir d'un an avec 20% de réduc au max
@@ -406,9 +406,9 @@ public class ResponderBehaviour extends Behaviour {
         double promotionPortion = (1 - bookInAdvanceIndex) / 12;
 
         if(monthDiff >= 12) {
-            prix = prix * bookInAdvanceIndex;
+            prix *= bookInAdvanceIndex;
         } else if(monthDiff != 0) {
-            prix = prix * (bookInAdvanceIndex + (promotionPortion * monthDiff));
+            prix *= (bookInAdvanceIndex + (promotionPortion * monthDiff));
         }
 
         if(prix < hotel.getFloorPrice() * getNbDaysBetweenDates(dateDebut, dateFin)) {
@@ -416,6 +416,10 @@ public class ResponderBehaviour extends Behaviour {
         }
 
         prix = Math.round(prix * 100.0) / 100.0;
+
+        if((int) message.get("nbPersonne") > 15) {
+            prix *= 0.95;
+        }
 
         answer.put("nomHotel", hotel.getName());
         answer.put("nbChambres", bestCombinaison.size());
