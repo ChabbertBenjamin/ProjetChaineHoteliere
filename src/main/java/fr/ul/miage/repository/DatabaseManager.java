@@ -40,7 +40,7 @@ public class DatabaseManager {
     }
 
     public double getLackOfReservationIndex() throws SQLException {
-        return getIndex("lackofreservation");
+        return getIndex("lack_of_reservation");
     }
 
     //High Season
