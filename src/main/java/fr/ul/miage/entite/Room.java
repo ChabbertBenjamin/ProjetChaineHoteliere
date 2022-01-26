@@ -15,9 +15,9 @@ public class Room {
 
     public Room(int id, Double price, int nbBed, int idHotel) throws Exception {
         this.id = id;
-        this.setPrice(price);
         this.nbBed = nbBed;
         this.idHotel = idHotel;
+        this.setPrice(price);
     }
 
     public int getId() {
