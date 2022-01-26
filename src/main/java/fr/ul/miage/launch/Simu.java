@@ -43,7 +43,7 @@ public class Simu {
         //pp.setProperty(Profile.SERVICES, "jade.core.messaging.TopicManagementService;jade.core.event.NotificationService");
 
         var lesAgents = new StringBuilder();
-        lesAgents.append("Ibis:fr.ul.miage.agent.AgentChaineHoteliere;");
+        lesAgents.append("F1:fr.ul.miage.agent.AgentChaineHoteliere;");
 
         pp.setProperty(Profile.AGENTS, lesAgents.toString());
         // creation d'un profil par defaut

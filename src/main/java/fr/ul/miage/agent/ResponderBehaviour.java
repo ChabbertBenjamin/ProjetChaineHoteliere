@@ -4,8 +4,13 @@ import fr.ul.miage.entite.Hotel;
 import fr.ul.miage.entite.Reservation;
 import fr.ul.miage.entite.Room;
 import fr.ul.miage.model.ConnectBDD;
+import fr.ul.miage.testMessage.responderTestRecherche;
 import jade.core.AID;
 import jade.core.behaviours.Behaviour;
+import jade.domain.DFService;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import org.json.simple.JSONObject;
@@ -81,6 +86,9 @@ public class ResponderBehaviour extends Behaviour {
     }
 
     public String getTypeMessage(JSONObject message) {
+        if(message.get("nomChaine").equals("Ibis")){
+            return "reponse concurent";
+        }
         if (message.get("idProposition") != null) {
             return "reservation";
         } else {
@@ -90,7 +98,7 @@ public class ResponderBehaviour extends Behaviour {
         }
     }
 
-    public JSONObject processMessage(JSONObject message, String msgType) throws SQLException, ParseException {
+    public JSONObject processMessage(JSONObject message, String msgType) throws SQLException, ParseException, InterruptedException {
         JSONObject answer = new JSONObject();
         // Si c'est une recherche
         if (msgType.equals("recherche")) {
@@ -228,7 +236,7 @@ public class ResponderBehaviour extends Behaviour {
         return answer;
     }
 
-    public JSONObject reservationMessage(JSONObject message, ArrayList<Room> listRoom, Hotel hotel, int nbBedDispo) throws SQLException, ParseException {
+    public JSONObject reservationMessage(JSONObject message, ArrayList<Room> listRoom, Hotel hotel, int nbBedDispo) throws SQLException, ParseException, InterruptedException {
         JSONObject answer = new JSONObject();
         //Tri des chambres par rapport à leurs nombre de lit (décroissant) pour stoper l'algorithme dès qu'on trouve une combinaison parfaite
         listRoom.sort((r1, r2) -> r2.getNbBed() - r1.getNbBed());
@@ -326,6 +334,31 @@ public class ResponderBehaviour extends Behaviour {
         this.listCombinaison.add(bestCombinaison);
 
 
+
+
+        //On change le nom de la chaine qui doit recevoir le message
+        message.put("nomChaine", "Ibis");
+        AID aid = new AID();
+        // Envoie du message au concurent pour voir si il peut gérer la même recherche
+        sendMessageConcurent(message, aid);
+        // On attend 1 seconde pour avoir une réponse
+        sleep(1000);
+        ACLMessage aclMessage = myAgent.receive(mt);
+        boolean concurentPlace = true;
+        // On a recu une réponse
+        if(aclMessage != null){
+            try {
+                JSONObject reponseConcurent = (JSONObject) aclMessage.getContentObject();
+                ArrayList<JSONObject> listPropositionConcurent = (ArrayList<JSONObject>) reponseConcurent.get("propositionReservation");
+                if(listPropositionConcurent == null){
+                    concurentPlace = false;
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+
+
         // ON RENVOIT LA PROPOSITION AVEC SON PRIX
 
         double prix = 0;
@@ -342,6 +375,10 @@ public class ResponderBehaviour extends Behaviour {
                     (int) message.get("nbPersonne")
             );
             prix += res.calculatePriceBasedOnDates();
+        }
+        // Si les concurents non pas de place on augmente de 15% les prix
+        if(!concurentPlace){
+            prix = prix*1.15;
         }
         answer.put("nomHotel", hotel.getName());
         answer.put("nbChambres", bestCombinaison.size());
@@ -503,6 +540,36 @@ public class ResponderBehaviour extends Behaviour {
             myAgent.send(aclMessage);
         } catch (Exception ex) {
             ex.printStackTrace();
+        }
+    }
+
+    private void sendMessageConcurent(JSONObject message, AID id){
+        DFAgentDescription dfd = new DFAgentDescription();
+
+        // Recherche d'un agent pour lui envoyer un message
+        try {
+            DFAgentDescription[] result = DFService.search(myAgent, dfd);
+            String out = "";
+            int i = 0;
+            String service = "";
+            // On cherche un agent avec le nomChaine "Ibis" (car notre objet JSON à pour nomChaine: "Ibis"
+            while ((service.compareTo(message.get("nomChaine").toString()) != 0) && (i < result.length)) {
+                DFAgentDescription desc = (DFAgentDescription) result[i];
+                Iterator iter2 = desc.getAllServices();
+                while (iter2.hasNext()) {
+                    ServiceDescription sd = (ServiceDescription) iter2.next();
+                    service = sd.getName();
+                    if (service.compareTo(message.get("nomChaine").toString()) == 0) {
+                        id = desc.getName();
+                        break;
+                    }
+                }
+                System.out.println(id.getName());
+                // On envoie le message à tous les agents trouvé
+                sendMessage(message, id);
+                i++;
+            }
+        } catch (FIPAException fe) {
         }
     }
 }

@@ -35,7 +35,7 @@ public class SenderTestRecherche extends Agent {
         msgRechercheHotel.put("nbPersonne",7);
         msgRechercheHotel.put("destination","Nancy");
         msgRechercheHotel.put("standing","3 étoiles");
-        msgRechercheHotel.put("nomChaine","Ibis");
+        msgRechercheHotel.put("nomChaine","F1");
 
 
         System.out.println("Hello. My name is " + this.getLocalName());

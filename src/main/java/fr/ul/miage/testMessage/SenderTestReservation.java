@@ -31,7 +31,7 @@ public class SenderTestReservation extends Agent {
         JSONObject msgReservationHotel = new JSONObject();
         msgReservationHotel.put("idProcessus",1);
         msgReservationHotel.put("idProposition",0);
-        msgReservationHotel.put("nomChaine","Ibis");
+        msgReservationHotel.put("nomChaine","F1");
 
         System.out.println("Hello. My name is " + this.getLocalName());
         //Object[] args = getArguments();
