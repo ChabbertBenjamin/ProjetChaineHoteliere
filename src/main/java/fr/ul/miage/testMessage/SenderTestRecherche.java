@@ -34,7 +34,7 @@ public class SenderTestRecherche extends Agent {
         msgRechercheHotel.put("prix",20.0);
         msgRechercheHotel.put("nbPersonne",7);
         msgRechercheHotel.put("destination","Nancy");
-        msgRechercheHotel.put("standing","3 étoiles");
+        msgRechercheHotel.put("standing",3);
         msgRechercheHotel.put("nomChaine","F1");
 
 

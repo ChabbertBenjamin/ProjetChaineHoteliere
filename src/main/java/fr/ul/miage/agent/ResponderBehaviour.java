@@ -107,8 +107,15 @@ public class ResponderBehaviour extends Behaviour {
             int counter =0;
             ArrayList<JSONObject> tmp = new ArrayList<>();
 
-            //Boucle sur chaque hotel
+            ArrayList<Hotel> listHotelFound = new ArrayList<>();
             for (Hotel h:listHotel) {
+                // Récupère que les hotels de la bonne ville et le bon standing
+                if(h.getCity().equals(message.get("destination")) && h.getStanding() == (int) message.get("standing")){
+                    listHotelFound.add(h);
+                }
+            }
+            //Boucle sur chaque hotel
+            for (Hotel h:listHotelFound) {
                 // On cherche les chambres disponible dans l'hotel
                 ArrayList<Room> listRoomAvailable = rechercheRoomAvailable(h, message);
                 int nbBedDispo=0;
