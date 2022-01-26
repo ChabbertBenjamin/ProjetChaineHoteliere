@@ -118,7 +118,7 @@ public class Reservation {
         return !isDateDuringWeekend(date);
     }
 
-    private List<LocalDate> getDatesBetween(Date startDate, Date endDate) {
+    public List<LocalDate> getDatesBetween(Date startDate, Date endDate) {
         LocalDate localDateStart = startDate.toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDate();
@@ -160,6 +160,11 @@ public class Reservation {
 
         }
         return priceBasedOnDates;
+    }
+
+    public int getNbDayOfReservation() {
+        List<LocalDate> reservationAllDates = getDatesBetween(this.dateStart, this.dateEnd);
+        return reservationAllDates.size();
     }
 
 

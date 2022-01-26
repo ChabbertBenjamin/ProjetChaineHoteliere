@@ -19,11 +19,14 @@ import org.json.simple.JSONObject;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static java.lang.Thread.sleep;
 
@@ -388,12 +391,10 @@ public class ResponderBehaviour extends Behaviour {
             );
 
             prix += dm.applyLackOfReservationPromotion(res.calculatePriceBasedOnDates(), hotel.getId());
-            System.out.println(prix);
         }
         // Si les concurents non pas de place on augmente de 15% les prix
         if(!concurentPlace){
             prix = prix * dm.getNoConcurrentIndex();
-            System.out.println(prix);
         }
 
         //Appliquer réduction pour réservation à l'avance : à partir d'un an avec 20% de réduc au max
@@ -410,8 +411,11 @@ public class ResponderBehaviour extends Behaviour {
             prix = prix * (bookInAdvanceIndex + (promotionPortion * monthDiff));
         }
 
-        System.out.println(prix);
+        if(prix < hotel.getFloorPrice() * getNbDaysBetweenDates(dateDebut, dateFin)) {
+            prix = hotel.getFloorPrice() * getNbDaysBetweenDates(dateDebut, dateFin);
+        }
 
+        prix = Math.round(prix * 100.0) / 100.0;
 
         answer.put("nomHotel", hotel.getName());
         answer.put("nbChambres", bestCombinaison.size());
@@ -604,6 +608,20 @@ public class ResponderBehaviour extends Behaviour {
             }
         } catch (FIPAException fe) {
         }
+    }
+
+
+    public int getNbDaysBetweenDates(Date startDate, Date endDate) {
+        LocalDate localDateStart = startDate.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+
+        LocalDate localDateEnd = endDate.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+
+        return localDateStart.datesUntil(localDateEnd)
+                .collect(Collectors.toList()).size();
     }
 
 
