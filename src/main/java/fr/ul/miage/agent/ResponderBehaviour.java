@@ -4,6 +4,7 @@ import fr.ul.miage.entite.Hotel;
 import fr.ul.miage.entite.Reservation;
 import fr.ul.miage.entite.Room;
 import fr.ul.miage.model.ConnectBDD;
+import fr.ul.miage.repository.DatabaseManager;
 import fr.ul.miage.testMessage.responderTestRecherche;
 import jade.core.AID;
 import jade.core.behaviours.Behaviour;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.Thread.sleep;
 
@@ -237,6 +239,8 @@ public class ResponderBehaviour extends Behaviour {
     }
 
     public JSONObject reservationMessage(JSONObject message, ArrayList<Room> listRoom, Hotel hotel, int nbBedDispo) throws SQLException, ParseException, InterruptedException {
+        DatabaseManager dm = new DatabaseManager();
+
         JSONObject answer = new JSONObject();
         //Tri des chambres par rapport à leurs nombre de lit (décroissant) pour stoper l'algorithme dès qu'on trouve une combinaison parfaite
         listRoom.sort((r1, r2) -> r2.getNbBed() - r1.getNbBed());
@@ -376,12 +380,34 @@ public class ResponderBehaviour extends Behaviour {
                     (int) message.get("nbPersonne")
             );
 
-            prix = res.applyLackOfReservationPromotion(res.calculatePriceBasedOnDates());
+            prix += dm.applyLackOfReservationPromotion(res.calculatePriceBasedOnDates(), hotel.getId());
         }
         // Si les concurents non pas de place on augmente de 15% les prix
         if(!concurentPlace){
-            prix = prix*1.15;
+            prix = prix * dm.getNoConcurrentIndex();
         }
+
+        //Appliquer réduction pour réservation à l'avance : à partir d'un an avec 20% de réduc au max
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date firstDate = sdf.parse((String) message.get("dateDemande"));
+
+        Date currentDate = Calendar.getInstance().getTime();
+        Date secondDate = sdf.parse(String.valueOf(currentDate));
+
+        long diffInMillies = Math.abs(secondDate.getTime() - firstDate.getTime());
+        Calendar diff = Calendar.getInstance();
+        diff.setTimeInMillis(diffInMillies);
+        int monthDiff = diff.get(Calendar.MONTH);
+
+        double bookInAdvanceIndex = dm.getNoBookInAdvanceIndex();
+        double promotionPortion = (1 - bookInAdvanceIndex) / 12;
+
+        if(monthDiff >= 12) {
+            prix = prix * bookInAdvanceIndex;
+        } else {
+            prix = prix * promotionPortion * monthDiff;
+        }
+
 
         answer.put("nomHotel", hotel.getName());
         answer.put("nbChambres", bestCombinaison.size());
@@ -575,4 +601,6 @@ public class ResponderBehaviour extends Behaviour {
         } catch (FIPAException fe) {
         }
     }
+
+
 }

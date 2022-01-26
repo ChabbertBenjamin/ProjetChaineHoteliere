@@ -31,6 +31,14 @@ public class DatabaseManager {
         return getIndex("week");
     }
 
+    public double getNoConcurrentIndex() throws SQLException {
+        return getIndex("no_concurrent");
+    }
+
+    public double getNoBookInAdvanceIndex() throws SQLException {
+        return getIndex("book_in_advance");
+    }
+
     public double getLackOfReservationIndex() throws SQLException {
         return getIndex("lackofreservation");
     }
@@ -68,6 +76,7 @@ public class DatabaseManager {
     public int getLowSeasonEndDay() throws SQLException {
         return getGlobalDataDay("low_season_end");
     }
+
 
     public Room getRoomById(int id) throws SQLException {
         Room room = null;
@@ -273,4 +282,20 @@ public class DatabaseManager {
         stmt.setInt(1, idHotel);
         stmt.executeQuery();
     }
+
+
+    public boolean isNbResaInTwoWeeksUnder60Percent(int idHotel) throws SQLException {
+        int nbResa = getNbReservationInTwoWeeksByHotel(idHotel);
+        Hotel hotel = getHotelById(idHotel);
+        return (nbResa * 100 / hotel.getNbRoom()) < 60;
+    }
+
+    public double applyLackOfReservationPromotion(double price, int idHotel) throws SQLException {
+        if(isNbResaInTwoWeeksUnder60Percent(idHotel)) {
+            return price * getLackOfReservationIndex();
+        }
+        return price;
+    }
+
+
 }

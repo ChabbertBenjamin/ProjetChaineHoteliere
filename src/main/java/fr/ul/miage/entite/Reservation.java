@@ -162,6 +162,8 @@ public class Reservation {
         return priceBasedOnDates;
     }
 
+
+
 //    //Apply day by day the seasonPrice
 //    private double calculatePriceBasedOnDatesCheckingSeason() throws SQLException {
 //        List<LocalDate> reservationAllDates = getDatesBetween(this.dateStart, this.dateEnd);
@@ -184,16 +186,4 @@ public class Reservation {
         return Date.from(localDate.atStartOfDay(defaultZoneId).toInstant());
     }
 
-    public boolean isNbResaInTwoWeeksUnder60Percent() throws SQLException {
-        int nbResa = dm.getNbReservationInTwoWeeksByHotel(this.idHotel);
-        Hotel hotel = dm.getHotelById(this.idHotel);
-        return (nbResa * 100 / hotel.getNbRoom()) < 60;
-    }
-
-    public double applyLackOfReservationPromotion(double price) throws SQLException {
-        if(isNbResaInTwoWeeksUnder60Percent()) {
-            return price * dm.getLackOfReservationIndex();
-        }
-        return price;
-    }
 }
