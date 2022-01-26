@@ -7,10 +7,10 @@ import jade.lang.acl.MessageTemplate;
 import org.json.simple.JSONObject;
 
 
-public class responderTest extends Behaviour {
+public class responderTestReservation extends Behaviour {
     private final static MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
-    public responderTest(SenderTestAgent senderTestAgent) {
-        super(senderTestAgent);
+    public responderTestReservation(SenderTestReservation SenderTestReservation) {
+        super(SenderTestReservation);
 
     }
 

@@ -11,7 +11,10 @@ import jade.lang.acl.MessageTemplate;
 import org.json.simple.JSONObject;
 
 import java.sql.*;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Date;
 
@@ -87,14 +90,13 @@ public class ResponderBehaviour extends Behaviour {
         }
     }
 
-    public JSONObject processMessage(JSONObject message, String msgType) throws SQLException {
+    public JSONObject processMessage(JSONObject message, String msgType) throws SQLException, ParseException {
         JSONObject answer = new JSONObject();
         // Si c'est une recherche
         if (msgType.equals("recherche")) {
             int counter =0;
             ArrayList<JSONObject> tmp = new ArrayList<>();
-            answer.put("idRequete", message.get("idRequete"));
-            answer.put("idProcessus", this.idProcessus);
+
             //Boucle sur chaque hotel
             for (Hotel h:listHotel) {
                 // On cherche les chambres disponible dans l'hotel
@@ -116,6 +118,8 @@ public class ResponderBehaviour extends Behaviour {
                 answer.put("IdRequete", message.get("idRequete"));
                 answer.put("erreur", "Aucune chambre disponible pour le nombre de personnes demandé");
             }else{
+                answer.put("idRequete", message.get("idRequete"));
+                answer.put("idProcessus", this.idProcessus);
                 answer.put("propositionReservation", tmp);
                 idProcessusListCombinaison.put(idProcessus,this.listCombinaison);
                 idProcessusResultRecherche.put(idProcessus,answer);
@@ -125,6 +129,7 @@ public class ResponderBehaviour extends Behaviour {
             // Si c'est une reservation
             int idProcessus = (int) message.get("idProcessus");
             int idProposition = (int) message.get("idProposition");
+
             if(idProcessusResultRecherche.get(idProcessus) == null){
                 // Si aucune reserche n'a été faites
                 answer.put("idProposition",idProposition);
@@ -138,7 +143,6 @@ public class ResponderBehaviour extends Behaviour {
                 bestCombinaison = listCombinaison.get(idProposition);
                 // Enregistrer la reservation
                 registerReservation(bestCombinaison, propositionChoisi);
-
 
                 answer.put("idProposition",message.get("idProposition"));
                 answer.put("nomHotel",propositionChoisi.get("nomHotel"));
@@ -157,16 +161,25 @@ public class ResponderBehaviour extends Behaviour {
 
             }
 
-            System.out.println(answer);
             return answer;
         }
 
     }
 
-    public ArrayList<Room> rechercheRoomAvailable(Hotel h, JSONObject message) throws SQLException {
+    public ArrayList<Room> rechercheRoomAvailable(Hotel h, JSONObject message) throws SQLException, ParseException {
+
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss");
+        Date dateDebutDemande = simpleDateFormat.parse((String) message.get("dateDebut"));
+        Date dateFinDemande = simpleDateFormat.parse((String) message.get("dateFin"));
+
         ArrayList<Room> answer = new ArrayList<Room>();
-        Date dateDebutDemande = (Date) message.get("dateDebut");
-        Date dateFinDemande = (Date) message.get("dateFin");
+        //Date dateDebutDemande = new Date(String.valueOf((Date) message.get("dateDebut")));
+        // dateFinDemande = new Date(String.valueOf((Date) message.get("dateFin")));
+
+
+
+
+
         Statement stmt = connect.createStatement();
         ResultSet res = stmt.executeQuery("SELECT * FROM room WHERE idhotel=" + h.getId()/*+"and nbbed >=" + message.get("nbPersonne")*/);
         ArrayList<Room> listRoom = new ArrayList<>();
@@ -181,7 +194,7 @@ public class ResponderBehaviour extends Behaviour {
             ResultSet res2 = stmt2.executeQuery("SELECT * FROM reservation WHERE idroom=" + r.getId());
             ArrayList<Reservation> listReservation = new ArrayList<>();
             while (res2.next()) {
-                Reservation reservation = new Reservation(res2.getInt(1), res2.getInt(2), res2.getInt(3), res2.getDate(4), res2.getDate(5), res2.getDouble(6), res2.getInt(7));
+                Reservation reservation = new Reservation(res2.getInt(1), res2.getInt(2), res2.getInt(3), res2.getDate(6), res2.getDate(7), res2.getDouble(4), res2.getInt(5));
                 listReservation.add(reservation);
             }
             for (Reservation reservation : listReservation) {
@@ -215,7 +228,7 @@ public class ResponderBehaviour extends Behaviour {
         return answer;
     }
 
-    public JSONObject reservationMessage(JSONObject message, ArrayList<Room> listRoom, Hotel hotel, int nbBedDispo) throws SQLException {
+    public JSONObject reservationMessage(JSONObject message, ArrayList<Room> listRoom, Hotel hotel, int nbBedDispo) throws SQLException, ParseException {
         JSONObject answer = new JSONObject();
         //Tri des chambres par rapport à leurs nombre de lit (décroissant) pour stoper l'algorithme dès qu'on trouve une combinaison parfaite
         listRoom.sort((r1, r2) -> r2.getNbBed() - r1.getNbBed());
@@ -316,12 +329,15 @@ public class ResponderBehaviour extends Behaviour {
         // ON RENVOIT LA PROPOSITION AVEC SON PRIX
 
         double prix = 0;
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss");
+        Date dateDebutDemande = simpleDateFormat.parse((String) message.get("dateDebut"));
+        Date dateFinDemande = simpleDateFormat.parse((String) message.get("dateFin"));
         for (Room roomToReserve : bestCombinaison) {
             Reservation res = new Reservation((int) ((Math.random() * (99999999)) + 0),
                     hotel.getId(),
                     roomToReserve.getId(),
-                    (Date) message.get("dateDebut"),
-                    (Date) message.get("dateFin"),
+                    dateDebutDemande,
+                    dateFinDemande,
                     roomToReserve.getPrice(),
                     (int) message.get("nbPersonne")
             );
@@ -341,10 +357,13 @@ public class ResponderBehaviour extends Behaviour {
     }
 
     public void registerReservation(ArrayList<Room> bestCombinaison, JSONObject message) throws SQLException {
-        SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String dateDebutDemandeString = (String) message.get("dateDebut");
+        String dateFinDemandeString = (String) message.get("dateFin");
 
-        Date dateDebutDemande = (Date) message.get("dateDebut");
-        Date dateFinDemande = (Date) message.get("dateFin");
+        LocalDateTime dateDebutResa = LocalDateTime.parse(dateDebutDemandeString, formatter);
+        LocalDateTime dateFinResa = LocalDateTime.parse(dateFinDemandeString, formatter);
+
         Statement stmt = connect.createStatement();
         ResultSet res = stmt.executeQuery("SELECT * FROM hotel WHERE namehotel='" + message.get("nomHotel")+"'");
         ArrayList<Room> listHotel = new ArrayList<>();
@@ -360,22 +379,22 @@ public class ResponderBehaviour extends Behaviour {
             Reservation resa = new Reservation((int) ((Math.random() * (99999999)) + 0),
                     hotel.getId(),
                     roomToReserve.getId(),
-                    (Date) message.get("dateDebut"),
-                    (Date) message.get("dateFin"),
+                    new Date(),
+                    new Date(),
                     roomToReserve.getPrice(),
                     roomToReserve.getNbBed()
             );
             prix = resa.calculatePriceBasedOnDates();
 
-            String SQL_INSERT = "INSERT INTO reservation (idhotel, idroom, datestart, dateend, price, nbpeople) VALUES (?,?,?,?,?,?)";
+            String SQL_INSERT = "INSERT INTO reservation (idhotel, idroom,  price, nbpeople, datestart, dateend) VALUES (?,?,?,?,?,?)";
             try (PreparedStatement myStmt = connect.prepareStatement(SQL_INSERT)) {
                 java.sql.Date date = new java.sql.Date(0000 - 00 - 00);
                 myStmt.setInt(1, hotel.getId());
                 myStmt.setInt(2, roomToReserve.getId());
-                myStmt.setDate(3, date.valueOf(formater.format(dateDebutDemande)));
-                myStmt.setDate(4, date.valueOf(formater.format(dateFinDemande)));
-                myStmt.setDouble(5, prix);
-                myStmt.setInt(6, roomToReserve.getNbBed());
+                myStmt.setDouble(3, prix);
+                myStmt.setInt(4, roomToReserve.getNbBed());
+                myStmt.setString(5, dateDebutDemandeString);
+                myStmt.setString(6, dateFinDemandeString);
 
                 int row = myStmt.executeUpdate();
                 // rows affected
