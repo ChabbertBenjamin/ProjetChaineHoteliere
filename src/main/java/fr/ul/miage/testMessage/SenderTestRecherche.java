@@ -8,6 +8,7 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -21,14 +22,21 @@ public class SenderTestRecherche extends Agent {
     @Override
     protected void setup() {
         // Création d'un objet JSON test similaire à ceux que notre agent doit recevoir avec le projet final
+        SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date aujourdhui = new Date();
+        Date dateDemande = new Date();
+        try {
+            dateDemande = formater.parse("2021-01-15 15:14:53");
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
         Calendar cal = Calendar.getInstance();
         cal.setTime(aujourdhui);
         cal.add(Calendar.DAY_OF_MONTH, 1);
-        SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
         JSONObject msgRechercheHotel = new JSONObject();
         msgRechercheHotel.put("idRequete",1);
-        msgRechercheHotel.put("dateDemande",formater.format(aujourdhui));
+        msgRechercheHotel.put("dateDemande",formater.format(dateDemande));
         msgRechercheHotel.put("dateDebut",formater.format(aujourdhui));
         msgRechercheHotel.put("dateFin",formater.format(cal.getTime()));
         msgRechercheHotel.put("prix",20.0);

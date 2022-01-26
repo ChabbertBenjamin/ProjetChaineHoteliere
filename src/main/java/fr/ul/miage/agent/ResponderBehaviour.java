@@ -367,46 +367,43 @@ public class ResponderBehaviour extends Behaviour {
 
         double prix = 0;
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss");
-        Date dateDebutDemande = simpleDateFormat.parse((String) message.get("dateDebut"));
-        Date dateFinDemande = simpleDateFormat.parse((String) message.get("dateFin"));
+        Date dateDebut = simpleDateFormat.parse((String) message.get("dateDebut"));
+        Date dateFin = simpleDateFormat.parse((String) message.get("dateFin"));
         for (Room roomToReserve : bestCombinaison) {
             //tmp resa
             Reservation res = new Reservation((int) ((Math.random() * (99999999)) + 0),
                     hotel.getId(),
                     roomToReserve.getId(),
-                    dateDebutDemande,
-                    dateFinDemande,
+                    dateDebut,
+                    dateFin,
                     roomToReserve.getPrice(),
                     (int) message.get("nbPersonne")
             );
 
             prix += dm.applyLackOfReservationPromotion(res.calculatePriceBasedOnDates(), hotel.getId());
+            System.out.println(prix);
         }
         // Si les concurents non pas de place on augmente de 15% les prix
         if(!concurentPlace){
             prix = prix * dm.getNoConcurrentIndex();
+            System.out.println(prix);
         }
 
         //Appliquer réduction pour réservation à l'avance : à partir d'un an avec 20% de réduc au max
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Date firstDate = sdf.parse((String) message.get("dateDemande"));
-
-        Date currentDate = Calendar.getInstance().getTime();
-        Date secondDate = sdf.parse(String.valueOf(currentDate));
-
-        long diffInMillies = Math.abs(secondDate.getTime() - firstDate.getTime());
-        Calendar diff = Calendar.getInstance();
-        diff.setTimeInMillis(diffInMillies);
-        int monthDiff = diff.get(Calendar.MONTH);
+        Date dateDemande = simpleDateFormat.parse((String) message.get("dateDemande"));
+        long diffInMillies = Math.abs(dateDebut.getTime() - dateDemande.getTime());
+        long monthDiff = diffInMillies / 2629000000L;
 
         double bookInAdvanceIndex = dm.getNoBookInAdvanceIndex();
         double promotionPortion = (1 - bookInAdvanceIndex) / 12;
 
         if(monthDiff >= 12) {
             prix = prix * bookInAdvanceIndex;
-        } else {
-            prix = prix * promotionPortion * monthDiff;
+        } else if(monthDiff != 0) {
+            prix = prix * (bookInAdvanceIndex + (promotionPortion * monthDiff));
         }
+
+        System.out.println(prix);
 
 
         answer.put("nomHotel", hotel.getName());

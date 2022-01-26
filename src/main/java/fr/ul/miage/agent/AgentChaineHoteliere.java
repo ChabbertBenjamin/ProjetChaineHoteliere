@@ -46,7 +46,7 @@ public class AgentChaineHoteliere extends Agent {
             e.printStackTrace();
         }
 
-        System.out.println("Salut je suis "+getLocalName()+" et je gères "+listHotel.size()+" hotel(s).");
+        System.out.println("Salut je suis "+getLocalName()+" et je gère "+listHotel.size()+" hotel(s).");
         this.registerService();
 
 
