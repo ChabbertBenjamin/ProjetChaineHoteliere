@@ -421,7 +421,7 @@ public class ResponderBehaviour extends Behaviour {
         answer.put("nbChambres", bestCombinaison.size());
         answer.put("dateDebut", message.get("dateDebut"));
         answer.put("dateFin", message.get("dateFin"));
-        answer.put("nbPersonnes", message.get("nbPersonne"));
+        answer.put("nbPersonne", message.get("nbPersonne"));
         answer.put("prix", prix);
         answer.put("standing",hotel.getStanding());
         answer.put("ville", hotel.getCity());
