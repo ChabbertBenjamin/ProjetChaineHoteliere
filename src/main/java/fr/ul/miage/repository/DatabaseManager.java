@@ -31,6 +31,10 @@ public class DatabaseManager {
         return getIndex("week");
     }
 
+    public double getLackOfReservationIndex() throws SQLException {
+        return getIndex("lackofreservation");
+    }
+
     //High Season
     public int getHighSeasonStartMonth() throws SQLException {
         return getGlobalDataMonth("high_season_start");
@@ -239,15 +243,20 @@ public class DatabaseManager {
     public int getNbReservationInTwoWeeksByHotel(int idHotel) throws SQLException {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Calendar cals = Calendar.getInstance();
+        Calendar cals2 = Calendar.getInstance();
+        cals2.add(Calendar.DATE, 15);
         String currentDate = simpleDateFormat.format(cals.getTime());
+        String dateInTwoWeeks = simpleDateFormat.format(cals.getTime());
 
         String sql = "SELECT count(id)" +
                 " FROM reservation" +
-                " WHERE datestart = ?" +
-                " and idhotel = ?";
+                " WHERE datestart >= ?" +
+                " AND datestart <= ?" +
+                " AND idhotel = ?";
         PreparedStatement stmt = connect.prepareStatement(sql);
         stmt.setString(1, currentDate);
-        stmt.setInt(2, idHotel);
+        stmt.setString(2, dateInTwoWeeks);
+        stmt.setInt(3, idHotel);
         ResultSet result = stmt.executeQuery();
         int res = -1;
         while (result.next()) {

@@ -366,6 +366,7 @@ public class ResponderBehaviour extends Behaviour {
         Date dateDebutDemande = simpleDateFormat.parse((String) message.get("dateDebut"));
         Date dateFinDemande = simpleDateFormat.parse((String) message.get("dateFin"));
         for (Room roomToReserve : bestCombinaison) {
+            //tmp resa
             Reservation res = new Reservation((int) ((Math.random() * (99999999)) + 0),
                     hotel.getId(),
                     roomToReserve.getId(),
@@ -374,12 +375,14 @@ public class ResponderBehaviour extends Behaviour {
                     roomToReserve.getPrice(),
                     (int) message.get("nbPersonne")
             );
-            prix += res.calculatePriceBasedOnDates();
+
+            prix = res.applyLackOfReservationPromotion(res.calculatePriceBasedOnDates());
         }
         // Si les concurents non pas de place on augmente de 15% les prix
         if(!concurentPlace){
             prix = prix*1.15;
         }
+
         answer.put("nomHotel", hotel.getName());
         answer.put("nbChambres", bestCombinaison.size());
         answer.put("dateDebut", message.get("dateDebut"));

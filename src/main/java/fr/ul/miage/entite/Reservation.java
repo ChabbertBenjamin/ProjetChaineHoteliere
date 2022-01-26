@@ -190,9 +190,10 @@ public class Reservation {
         return (nbResa * 100 / hotel.getNbRoom()) < 60;
     }
 
-    public void applyLackOfReservationPromotion() throws SQLException {
+    public double applyLackOfReservationPromotion(double price) throws SQLException {
         if(isNbResaInTwoWeeksUnder60Percent()) {
-            dm.applyLackOfReservationPromotion(this.idHotel);
+            return price * dm.getLackOfReservationIndex();
         }
+        return price;
     }
 }
