@@ -103,7 +103,7 @@ public class ResponderBehaviour extends Behaviour {
         }
     }
 
-    public JSONObject processMessage(JSONObject message, String msgType) throws SQLException, ParseException, InterruptedException {
+    public JSONObject processMessage(JSONObject message, String msgType) throws Exception {
         JSONObject answer = new JSONObject();
         // Si c'est une recherche
         if (msgType.equals("recherche")) {
@@ -186,7 +186,7 @@ public class ResponderBehaviour extends Behaviour {
 
     }
 
-    public ArrayList<Room> rechercheRoomAvailable(Hotel h, JSONObject message) throws SQLException, ParseException {
+    public ArrayList<Room> rechercheRoomAvailable(Hotel h, JSONObject message) throws Exception {
 
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss");
         Date dateDebutDemande = simpleDateFormat.parse((String) message.get("dateDebut"));
@@ -248,7 +248,7 @@ public class ResponderBehaviour extends Behaviour {
         return answer;
     }
 
-    public JSONObject reservationMessage(JSONObject message, ArrayList<Room> listRoom, Hotel hotel, int nbBedDispo) throws SQLException, ParseException, InterruptedException {
+    public JSONObject reservationMessage(JSONObject message, ArrayList<Room> listRoom, Hotel hotel, int nbBedDispo) throws Exception {
         DatabaseManager dm = new DatabaseManager();
 
         JSONObject answer = new JSONObject();
@@ -411,15 +411,16 @@ public class ResponderBehaviour extends Behaviour {
             prix *= (bookInAdvanceIndex + (promotionPortion * monthDiff));
         }
 
+        if((int) message.get("nbPersonne") > 15) {
+            prix *= 0.95;
+        }
+
         if(prix < hotel.getFloorPrice() * getNbDaysBetweenDates(dateDebut, dateFin)) {
             prix = hotel.getFloorPrice() * getNbDaysBetweenDates(dateDebut, dateFin);
         }
 
         prix = Math.round(prix * 100.0) / 100.0;
 
-        if((int) message.get("nbPersonne") > 15) {
-            prix *= 0.95;
-        }
 
         answer.put("nomHotel", hotel.getName());
         answer.put("nbChambres", bestCombinaison.size());
@@ -434,7 +435,7 @@ public class ResponderBehaviour extends Behaviour {
         return answer;
     }
 
-    public void registerReservation(ArrayList<Room> bestCombinaison, JSONObject message) throws SQLException {
+    public void registerReservation(ArrayList<Room> bestCombinaison, JSONObject message) throws Exception {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String dateDebutDemandeString = (String) message.get("dateDebut");
         String dateFinDemandeString = (String) message.get("dateFin");

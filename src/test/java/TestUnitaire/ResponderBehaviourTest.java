@@ -93,7 +93,7 @@ public class ResponderBehaviourTest {
     }
 
     @Test
-    public void FindBestCombinaisonTest(){
+    public void FindBestCombinaisonTest() throws Exception {
         Room r1 = new Room(1,20.0,2,1);
         Room r2 = new Room(2,50.0,5,1);
         Room r3 = new Room(3,40.0,4,1);

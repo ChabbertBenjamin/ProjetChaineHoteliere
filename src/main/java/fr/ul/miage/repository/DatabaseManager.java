@@ -78,7 +78,7 @@ public class DatabaseManager {
     }
 
 
-    public Room getRoomById(int id) throws SQLException {
+    public Room getRoomById(int id) throws Exception {
         Room room = null;
         String sql = "SELECT *"
                 + " FROM room"

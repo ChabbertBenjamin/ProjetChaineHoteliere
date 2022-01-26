@@ -13,9 +13,9 @@ public class Room {
 
     DatabaseManager dm = new DatabaseManager();
 
-    public Room(int id, Double price, int nbBed, int idHotel) {
+    public Room(int id, Double price, int nbBed, int idHotel) throws Exception {
         this.id = id;
-        this.price = price;
+        this.setPrice(price);
         this.nbBed = nbBed;
         this.idHotel = idHotel;
     }
@@ -59,8 +59,6 @@ public class Room {
     public double getHighSeasonPrice() throws SQLException {
         return this.price * dm.getHighSeasonIndex();
     }
-
-
 
     public double getLowSeasonPrice() throws SQLException {
         return this.price * dm.getLowSeasonIndex();

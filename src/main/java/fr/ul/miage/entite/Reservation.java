@@ -132,7 +132,7 @@ public class Reservation {
     }
 
     //Apply day by day the weekendPrice and seasonPrice
-    public double calculatePriceBasedOnDates() throws SQLException {
+    public double calculatePriceBasedOnDates() throws Exception {
         List<LocalDate> reservationAllDates = getDatesBetween(this.dateStart, this.dateEnd);
         double priceBasedOnDates = 0;
         Room room = dm.getRoomById(this.idRoom);
