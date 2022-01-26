@@ -16,6 +16,7 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import org.json.simple.JSONObject;
 
+import java.math.BigInteger;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -37,9 +38,9 @@ public class ResponderBehaviour extends Behaviour {
 
     //Permet l'historique des anciennes recherches
     private ArrayList<ArrayList<Room>> listCombinaison;
-    private int idProcessus = 0;
-    private HashMap<Integer, ArrayList<ArrayList<Room>>> idProcessusListCombinaison = new HashMap<>();
-    private HashMap<Integer,JSONObject> idProcessusResultRecherche = new HashMap<>();
+    private BigInteger idProcessus = BigInteger.valueOf(0);
+    private HashMap<BigInteger, ArrayList<ArrayList<Room>>> idProcessusListCombinaison = new HashMap<>();
+    private HashMap<BigInteger,JSONObject> idProcessusResultRecherche = new HashMap<>();
 
     public ResponderBehaviour(AgentChaineHoteliere agentChaineHoteliere) {
         super(agentChaineHoteliere);
@@ -49,25 +50,22 @@ public class ResponderBehaviour extends Behaviour {
 
     @Override
     public void action() {
-        int time=0;
+
+
         while (true) {
-            ACLMessage aclMessage = myAgent.receive(mt);
-            try {
-                sleep(1);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            time++;
-            // Si ça fait 10 minutes que la recherche n'a pas été faite
-            if(time == 1000*60*10 ){
-                idProcessusListCombinaison.clear();
-                idProcessusResultRecherche.clear();
-                time=0;
-                //System.out.println("ancienne reserche supprimé");
+            BigInteger millis = BigInteger.valueOf(System.currentTimeMillis());
+            if(millis.intValue()%1000==0){
+                for (Map.Entry mapentry : idProcessusResultRecherche.entrySet()) {
+                    BigInteger key = (BigInteger) mapentry.getKey();
+                    //Si la recherche à été faite y'a plus de 10 minutes
+                    if(millis.intValue() - key.intValue() > 1000*60*10){
+                        idProcessusResultRecherche.remove(mapentry.getKey());
+                    }
+                }
             }
 
+            ACLMessage aclMessage = myAgent.receive(mt);
             if (aclMessage != null) {
-                time=0;
                 try {
                     JSONObject msg = (JSONObject) aclMessage.getContentObject();
                     System.out.println(myAgent.getLocalName() + ": I receive a message with content\n" + msg.toString());
@@ -90,7 +88,7 @@ public class ResponderBehaviour extends Behaviour {
         return false;
     }
 
-    public String getTypeMessage(JSONObject message) {
+    public String getTypeMessage(JSONObject message) throws InterruptedException {
         if(message.get("nomChaine").equals("Ibis")){
             return "reponse concurent";
         }
@@ -98,7 +96,8 @@ public class ResponderBehaviour extends Behaviour {
             return "reservation";
         } else {
             // On augmente le l'idProcessus de 1 qui correspond à la nouvelle recherche
-            this.idProcessus++;
+            this.idProcessus = BigInteger.valueOf(System.currentTimeMillis());
+            System.out.println("id de la recherche : " + idProcessus);
             return "recherche";
         }
     }
@@ -426,7 +425,7 @@ public class ResponderBehaviour extends Behaviour {
         answer.put("nbChambres", bestCombinaison.size());
         answer.put("dateDebut", message.get("dateDebut"));
         answer.put("dateFin", message.get("dateFin"));
-        answer.put("nbPersonnes", message.get("nbPersonne"));
+        answer.put("nbPersonne", message.get("nbPersonne"));
         answer.put("prix", prix);
         answer.put("standing",hotel.getStanding());
         answer.put("ville", hotel.getCity());
