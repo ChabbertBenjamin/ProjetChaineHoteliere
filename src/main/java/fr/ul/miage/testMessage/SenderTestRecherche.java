@@ -41,8 +41,8 @@ public class SenderTestRecherche extends Agent {
         msgRechercheHotel.put("dateFin",formater.format(cal.getTime()));
         msgRechercheHotel.put("prix",20.0);
         msgRechercheHotel.put("nbPersonne",7);
-        msgRechercheHotel.put("destination","Nancy");
-        msgRechercheHotel.put("standing",3);
+        msgRechercheHotel.put("destination","Bangkok");
+        msgRechercheHotel.put("standing",4);
         msgRechercheHotel.put("nomChaine","F1");
 
 

@@ -38,9 +38,9 @@ public class ResponderBehaviour extends Behaviour {
 
     //Permet l'historique des anciennes recherches
     private ArrayList<ArrayList<Room>> listCombinaison;
-    private BigInteger idProcessus = BigInteger.valueOf(0);
-    private HashMap<BigInteger, ArrayList<ArrayList<Room>>> idProcessusListCombinaison = new HashMap<>();
-    private HashMap<BigInteger,JSONObject> idProcessusResultRecherche = new HashMap<>();
+    private Integer idProcessus = 0;
+    private HashMap<Integer, ArrayList<ArrayList<Room>>> idProcessusListCombinaison = new HashMap<>();
+    private HashMap<Integer,JSONObject> idProcessusResultRecherche = new HashMap<>();
 
     public ResponderBehaviour(AgentChaineHoteliere agentChaineHoteliere) {
         super(agentChaineHoteliere);
@@ -52,7 +52,7 @@ public class ResponderBehaviour extends Behaviour {
     public void action() {
 
 
-        while (true) {
+        while (true) {/*
             BigInteger millis = BigInteger.valueOf(System.currentTimeMillis());
             if(millis.intValue()%1000==0){
                 for (Map.Entry mapentry : idProcessusResultRecherche.entrySet()) {
@@ -62,7 +62,7 @@ public class ResponderBehaviour extends Behaviour {
                         idProcessusResultRecherche.remove(mapentry.getKey());
                     }
                 }
-            }
+            }*/
 
             ACLMessage aclMessage = myAgent.receive(mt);
             if (aclMessage != null) {
@@ -96,7 +96,8 @@ public class ResponderBehaviour extends Behaviour {
             return "reservation";
         } else {
             // On augmente le l'idProcessus de 1 qui correspond à la nouvelle recherche
-            this.idProcessus = BigInteger.valueOf(System.currentTimeMillis());
+            //this.idProcessus = BigInteger.valueOf(System.currentTimeMillis());
+            this.idProcessus++;
             return "recherche";
         }
     }
@@ -450,14 +451,16 @@ public class ResponderBehaviour extends Behaviour {
         }
 
         double prix = 0;
-
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss");
+        Date dateDebut = simpleDateFormat.parse((String) message.get("dateDebut"));
+        Date dateFin = simpleDateFormat.parse((String) message.get("dateFin"));
         for (Room roomToReserve:bestCombinaison) {
 
             Reservation resa = new Reservation((int) ((Math.random() * (99999999)) + 0),
                     hotel.getId(),
                     roomToReserve.getId(),
-                    new Date(),
-                    new Date(),
+                    dateDebut,
+                    dateFin,
                     roomToReserve.getPrice(),
                     roomToReserve.getNbBed()
             );

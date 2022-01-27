@@ -33,10 +33,10 @@ public class Room {
     }
 
     public void setPrice(Double price) throws Exception {
-        Hotel hotel = dm.getHotelById(idHotel);
+        /*Hotel hotel = dm.getHotelById(idHotel);
         if (price < hotel.getFloorPrice()) {
             throw new Exception("Le prix de la chambre doit etre supérieur au prix plancher défini par l'hotel.");
-        }
+        }*/
         this.price = price;
     }
 
